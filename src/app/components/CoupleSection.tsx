@@ -31,7 +31,7 @@ export default function CoupleSection() {
   const [partner, setPartner] = useState<Partner | null>(null);
   const [requests, setRequests] = useState<CoupleRequest[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [partnerId, setPartnerId] = useState('');
+  const [partnerUsername, setPartnerUsername] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -89,12 +89,12 @@ export default function CoupleSection() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ partner_id: partnerId }),
+        body: JSON.stringify({ partner_username: partnerUsername }),
       });
 
       if (response.ok) {
         toast.success('Запрос отправлен! 💌');
-        setPartnerId('');
+        setPartnerUsername('');
         setDialogOpen(false);
       } else {
         const error = await response.json();
@@ -202,7 +202,7 @@ export default function CoupleSection() {
             <CardContent className="py-16 text-center">
               <Heart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg mb-2">У вас пока нет пары</h3>
-              <p className="text-gray-600 mb-4">Отправьте запрос своему партнеру по его UUID</p>
+              <p className="text-gray-600 mb-4">Отправьте запрос своему партнеру по его имени пользователя</p>
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="bg-red-500 hover:bg-red-600">
@@ -214,21 +214,21 @@ export default function CoupleSection() {
                   <DialogHeader>
                     <DialogTitle>Добавить партнера</DialogTitle>
                     <DialogDescription>
-                      Отправьте запрос пользователю по его UUID
+                      Отправьте запрос пользователю по его имени пользователя (username)
                     </DialogDescription>
                   </DialogHeader>
                   <form onSubmit={sendRequest} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="partner-id">UUID партнера</Label>
+                      <Label htmlFor="partner-username">Имя пользователя партнера</Label>
                       <Input
-                        id="partner-id"
-                        placeholder="db78891b-8555-4c7f-91b9-84516c61c394"
-                        value={partnerId}
-                        onChange={(e) => setPartnerId(e.target.value)}
+                        id="partner-username"
+                        placeholder="username"
+                        value={partnerUsername}
+                        onChange={(e) => setPartnerUsername(e.target.value)}
                         required
                       />
                       <p className="text-xs text-gray-500">
-                        UUID можно узнать у партнера в разделе профиля
+                        Введите имя пользователя (username) вашего партнера
                       </p>
                     </div>
                     <Button type="submit" className="w-full bg-red-500 hover:bg-red-600">
@@ -260,9 +260,6 @@ export default function CoupleSection() {
                       </Avatar>
                       <div>
                         <p className="font-medium">@{request.initiator.username}</p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          ID: {request.initiator.id}
-                        </p>
                       </div>
                     </div>
                     {request.status === 'PENDING' ? (
