@@ -2,8 +2,10 @@ services:
   my-love-web:
     container_name: my-love-web
     build: .
+    expose:
+      - 80
     ports:
-      - "80:80"
+      - "5173:80"
     networks:
       - app-network
     restart: unless-stopped
