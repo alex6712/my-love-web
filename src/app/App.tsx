@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { Heart } from 'lucide-react';
 import { AuthProvider, useAuth } from './components/AuthContext';
 import LoginPage from './components/LoginPage';

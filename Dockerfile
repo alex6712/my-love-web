@@ -1,33 +1,23 @@
-# Многоэтапная сборка для оптимизации размера образа
+# Stage 1 (сборка приложения)
 FROM node:20-alpine AS builder
 
-# Установка рабочей директории
 WORKDIR /app
 
-# Копирование файлов зависимостей
-COPY package.json package-lock.json ./
+COPY package*.json ./
 
-# Установка зависимостей
-RUN npm ci
+RUN npm ci --ignore-scripts --no-progress --quiet
 
-# Копирование исходного кода
 COPY . .
 
-# Сборка приложения
 RUN npm run build
 
-# Финальный образ с nginx для раздачи статики
+# Stage 2 (копирование файлов, запуск)
 FROM nginx:alpine
 
-# Копирование собранных файлов из builder
-COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Копирование конфигурации nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Открытие порта 80
+COPY --from=builder /app/dist /usr/share/nginx/html
+
 EXPOSE 80
 
-# Запуск nginx
 CMD ["nginx", "-g", "daemon off;"]
-
