@@ -3,7 +3,9 @@ name: Deploy to Server
 on:
   push:
     branches:
-      - main
+      - master
+  pull_request:
+    branches:
       - master
 
 jobs:
@@ -15,46 +17,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Docker image
-        run: |
-          docker build -t my-love-web:latest .
-
-      - name: Save Docker image
-        run: |
-          docker save my-love-web:latest | gzip > my-love-web.tar.gz
-
-      - name: Copy files to server
-        uses: appleboy/scp-action@v0.1.7
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          source: "my-love-web.tar.gz,docker-compose.yml"
-          target: "~/my-love-web"
+          ssh-private-key: ${{ secrets.SSH_KEY }}
 
-      - name: Deploy on server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
+      - name: Copy project to server
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p ~/my-love-web"
+
+          rsync -az --delete ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/my-love-web
+
+      - name: Deploy with Docker Compose
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
             cd ~/my-love-web
+            
+            docker compose down --remove-orphans
+            docker compose build --pull
+            docker compose up -d --wait
 
-            docker load < my-love-web.tar.gz
-
-            docker compose down || true
-
-            docker compose up -d
-
-            docker image prune -f
-
-            rm -f my-love-web.tar.gz
-
-      - name: Cleanup
-        if: always()
-        run: |
-          rm -f my-love-web.tar.gz
+          EOF
