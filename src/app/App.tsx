@@ -1,7 +1,9 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Heart } from 'lucide-react';
 import { AuthProvider, useAuth } from './components/AuthContext';
 import LoginPage from './components/LoginPage';
 import Dashboard from './components/Dashboard';
+import AlbumDetail from './components/AlbumDetail';
 import { Toaster } from './components/ui/sonner';
 
 function AppContent() {
@@ -18,18 +20,42 @@ function AppContent() {
     );
   }
 
+  if (!isAuthenticated) {
+    return (
+      <>
+        <LoginPage />
+        <Toaster />
+      </>
+    );
+  }
+
   return (
-    <>
-      {isAuthenticated ? <Dashboard /> : <LoginPage />}
-      <Toaster />
-    </>
+    <Dashboard>
+      <Routes>
+        <Route path="/" element={<HomeSection />} />
+        <Route path="/media" element={<MediaGallery />} />
+        <Route path="/media/album/:albumId" element={<AlbumDetail />} />
+        <Route path="/notes" element={<NotesSection />} />
+        <Route path="/games" element={<GamesSection />} />
+        <Route path="/couple" element={<CoupleSection />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Dashboard>
   );
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
+
+import HomeSection from './components/HomeSection';
+import MediaGallery from './components/MediaGallery';
+import NotesSection from './components/NotesSection';
+import GamesSection from './components/GamesSection';
+import CoupleSection from './components/CoupleSection';

@@ -1,12 +1,39 @@
 import { useState, useEffect } from 'react';
-import { Plus, FolderHeart, Image as ImageIcon, Calendar } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, FolderHeart, Image as ImageIcon, Calendar, MoreVertical, Trash2, Edit2, ExternalLink } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
+import { Switch } from './ui/switch';
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from './ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 import { toast } from 'sonner';
+
+interface CreatorDTO {
+  id: string;
+  username: string;
+  avatar_url?: string | null;
+  is_active: boolean;
+  created_at: string;
+}
 
 interface Album {
   id: string;
@@ -14,26 +41,21 @@ interface Album {
   description?: string | null;
   cover_url?: string | null;
   is_private: boolean;
-  creator: {
-    id: string;
-    username: string;
-    avatar_url?: string | null;
-    is_active: boolean;
-    created_at: string;
-  };
+  creator: CreatorDTO;
   created_at: string;
-  photos_count: number;
 }
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://api.my-love-application.ru';
 
 export default function MediaGallery() {
+  const navigate = useNavigate();
   const [albums, setAlbums] = useState<Album[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newAlbum, setNewAlbum] = useState({
     title: '',
     description: '',
+    is_private: false,
   });
 
   useEffect(() => {
@@ -45,13 +67,12 @@ export default function MediaGallery() {
       const token = localStorage.getItem('access_token');
       const response = await fetch(`${API_URL}/v1/media/albums`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
       if (response.ok) {
         const data = await response.json();
-        // API возвращает { albums: AlbumDTO[] }
         setAlbums(Array.isArray(data.albums) ? data.albums : []);
       } else {
         setAlbums([]);
@@ -73,15 +94,19 @@ export default function MediaGallery() {
       const response = await fetch(`${API_URL}/v1/media/albums`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newAlbum),
+        body: JSON.stringify({
+          title: newAlbum.title,
+          description: newAlbum.description || null,
+          is_private: newAlbum.is_private,
+        }),
       });
 
       if (response.ok) {
         toast.success('Альбом создан! 📸');
-        setNewAlbum({ title: '', description: '' });
+        setNewAlbum({ title: '', description: '', is_private: false });
         setDialogOpen(false);
         fetchAlbums();
       } else {
@@ -90,6 +115,24 @@ export default function MediaGallery() {
     } catch (error) {
       console.error('Error creating album:', error);
       toast.error('Ошибка при создании альбома');
+    }
+  };
+
+  const deleteAlbum = async (albumId: string) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      await fetch(`${API_URL}/v1/media/albums/${albumId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      toast.success('Альбом удалён');
+      fetchAlbums();
+    } catch (error) {
+      console.error('Error deleting album:', error);
+      toast.error('Не удалось удалить альбом');
     }
   };
 
@@ -106,7 +149,6 @@ export default function MediaGallery() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl mb-1">Медиа-галерея 📸</h1>
@@ -145,6 +187,14 @@ export default function MediaGallery() {
                   rows={3}
                 />
               </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="is_private">Личный альбом</Label>
+                <Switch
+                  id="is_private"
+                  checked={newAlbum.is_private}
+                  onCheckedChange={(checked) => setNewAlbum({ ...newAlbum, is_private: checked })}
+                />
+              </div>
               <Button type="submit" className="w-full bg-red-500 hover:bg-red-600">
                 Создать
               </Button>
@@ -153,7 +203,6 @@ export default function MediaGallery() {
         </Dialog>
       </div>
 
-      {/* Albums Grid */}
       {albums.length === 0 ? (
         <Card>
           <CardContent className="py-16 text-center">
@@ -169,9 +218,15 @@ export default function MediaGallery() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {albums.map((album) => (
-            <Card key={album.id} className="hover:shadow-lg transition-shadow cursor-pointer group">
-              <CardHeader className="p-0">
-                <div className="aspect-video bg-gradient-to-br from-pink-200 to-purple-200 rounded-t-lg flex items-center justify-center group-hover:from-pink-300 group-hover:to-purple-300 transition-colors">
+            <Card
+              key={album.id}
+              className="group hover:shadow-lg transition-shadow"
+            >
+              <CardHeader className="p-0 relative">
+                <div
+                  className="aspect-video bg-gradient-to-br from-pink-200 to-purple-200 rounded-t-lg flex items-center justify-center group-hover:from-pink-300 group-hover:to-purple-300 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/media/album/${album.id}`)}
+                >
                   {album.cover_url ? (
                     <img
                       src={album.cover_url}
@@ -182,17 +237,70 @@ export default function MediaGallery() {
                     <FolderHeart className="w-16 h-16 text-white" />
                   )}
                 </div>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <div
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white rounded-full p-1 cursor-pointer"
+                    >
+                      <MoreVertical className="w-4 h-4 text-gray-600" />
+                    </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => navigate(`/media/album/${album.id}`)}
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Открыть
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Edit2 className="w-4 h-4 mr-2" />
+                      Переименовать
+                    </DropdownMenuItem>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <DropdownMenuItem
+                          className="text-red-500 focus:text-red-500"
+                          onSelect={(e) => e.preventDefault()}
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Удалить
+                        </DropdownMenuItem>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Удалить альбом?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Это действие нельзя отменить. Все файлы в альбоме будут удалены.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Отмена</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => deleteAlbum(album.id)}
+                            className="bg-red-500 hover:bg-red-600"
+                          >
+                            Удалить
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </CardHeader>
               <CardContent className="pt-4">
-                <CardTitle className="mb-2">{album.title}</CardTitle>
+                <CardTitle
+                  className="mb-2 cursor-pointer hover:text-red-500 transition-colors"
+                  onClick={() => navigate(`/media/album/${album.id}`)}
+                >
+                  {album.title}
+                </CardTitle>
                 {album.description && (
-                  <CardDescription className="mb-3 line-clamp-2">{album.description}</CardDescription>
+                  <CardDescription className="mb-3 line-clamp-2">
+                    {album.description}
+                  </CardDescription>
                 )}
                 <div className="flex items-center gap-4 text-sm text-gray-500">
-                  <div className="flex items-center gap-1">
-                    <ImageIcon className="w-4 h-4" />
-                    <span>{album.photos_count} фото</span>
-                  </div>
                   <div className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
                     <span>{new Date(album.created_at).toLocaleDateString()}</span>

@@ -232,8 +232,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Если получили 401, пытаемся обновить токен и повторить запрос
     if (response.status === 401) {
-      console.log('401 error'); // TODO: remove this
-
       try {
         await refreshToken();
         const newToken = localStorage.getItem('access_token');

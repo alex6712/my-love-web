@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Heart, User, Lock, Mail } from 'lucide-react';
+import { Heart, User, Lock } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -11,18 +11,14 @@ export default function LoginPage() {
   const { login, register } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Login form
   const [loginData, setLoginData] = useState({
     username: '',
     password: '',
   });
 
-  // Register form
   const [registerData, setRegisterData] = useState({
     username: '',
     password: '',
-    name: '',
-    email: '',
   });
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -31,7 +27,6 @@ export default function LoginPage() {
     try {
       await login(loginData.username, loginData.password);
     } catch (error) {
-      // Error handling is done in AuthContext
     } finally {
       setIsLoading(false);
     }
@@ -41,16 +36,9 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await register(
-        registerData.username,
-        registerData.password,
-        registerData.name,
-        registerData.email || undefined
-      );
-      // Reset form
-      setRegisterData({ username: '', password: '', name: '', email: '' });
+      await register(registerData.username, registerData.password);
+      setRegisterData({ username: '', password: '' });
     } catch (error) {
-      // Error handling is done in AuthContext
     } finally {
       setIsLoading(false);
     }
@@ -150,33 +138,7 @@ export default function LoginPage() {
                         required
                       />
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="register-name">Имя *</Label>
-                    <Input
-                      id="register-name"
-                      type="text"
-                      placeholder="Ваше имя"
-                      value={registerData.name}
-                      onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="register-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="register-email"
-                        type="email"
-                        placeholder="email@example.com"
-                        className="pl-10"
-                        value={registerData.email}
-                        onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
-                      />
-                    </div>
+                    <p className="text-xs text-gray-500">От 3 до 32 символов (a-z, A-Z, 0-9, _, -)</p>
                   </div>
 
                   <div className="space-y-2">
@@ -193,6 +155,7 @@ export default function LoginPage() {
                         required
                       />
                     </div>
+                    <p className="text-xs text-gray-500">Минимум 12 символов, с цифрой, спецсимволом, верхним и нижним регистром</p>
                   </div>
 
                   <Button type="submit" className="w-full bg-red-500 hover:bg-red-600" disabled={isLoading}>
