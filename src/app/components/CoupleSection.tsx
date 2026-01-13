@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Heart, UserPlus, Check, X, Calendar } from 'lucide-react';
+import { useAuth } from './AuthContext';
+import { API_URL } from '../constants/api';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
@@ -25,9 +27,8 @@ interface CoupleRequest {
   accepted_at: string | null;
 }
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://api.my-love-application.ru';
-
 export default function CoupleSection() {
+  const { authenticatedFetch } = useAuth();
   const [partner, setPartner] = useState<Partner | null>(null);
   const [requests, setRequests] = useState<CoupleRequest[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -41,16 +42,10 @@ export default function CoupleSection() {
 
   const fetchPartnerInfo = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_URL}/v1/couples/partner`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await authenticatedFetch(`${API_URL}/v1/couples/partner`);
 
       if (response.ok) {
         const data = await response.json();
-        // API возвращает { partner: PartnerDTO | null }
         setPartner(data.partner);
       }
     } catch (error) {
@@ -62,16 +57,10 @@ export default function CoupleSection() {
 
   const fetchRequests = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_URL}/v1/couples/pending`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await authenticatedFetch(`${API_URL}/v1/couples/pending`);
 
       if (response.ok) {
         const data = await response.json();
-        // API возвращает { requests: CoupleRequestDTO[] }
         setRequests(Array.isArray(data.requests) ? data.requests : []);
       }
     } catch (error) {
@@ -82,11 +71,9 @@ export default function CoupleSection() {
   const sendRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_URL}/v1/couples/request`, {
+      const response = await authenticatedFetch(`${API_URL}/v1/couples/request`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ partner_username: partnerUsername }),
@@ -108,12 +95,8 @@ export default function CoupleSection() {
 
   const handleRequest = async (requestId: string, action: 'accept' | 'decline') => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_URL}/v1/couples/${requestId}/${action}`, {
+      const response = await authenticatedFetch(`${API_URL}/v1/couples/${requestId}/${action}`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
       });
 
       if (response.ok) {

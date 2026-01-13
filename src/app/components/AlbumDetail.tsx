@@ -38,11 +38,10 @@ import {
   AlertDialogCancel,
 } from './ui/alert-dialog';
 import { useAuth } from './AuthContext';
+import { API_URL } from '../constants/api';
 import { useFileUpload, UploadProgress } from '../hooks/useFileUpload';
 import { MEDIA_CONFIG, formatFileSize } from '../constants/media';
 import { toast } from 'sonner';
-
-const API_URL = import.meta.env.VITE_API_URL || 'https://api.my-love-application.ru';
 
 interface CreatorDTO {
   id: string;
@@ -77,8 +76,10 @@ interface AlbumWithItemsDTO {
 export default function AlbumDetail() {
   const { albumId } = useParams<{ albumId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { uploads, uploadFiles, removeUpload, clearCompleted, isUploading } = useFileUpload();
+  const { user, authenticatedFetch } = useAuth();
+  const { uploads, uploadFiles, removeUpload, clearCompleted, isUploading } = useFileUpload({
+    authenticatedFetch,
+  });
 
   const [album, setAlbum] = useState<AlbumWithItemsDTO | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -94,12 +95,7 @@ export default function AlbumDetail() {
     if (!albumId) return;
 
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_URL}/v1/media/albums/${albumId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await authenticatedFetch(`${API_URL}/v1/media/albums/${albumId}`);
 
       if (!response.ok) {
         throw new Error('Album not found');
@@ -114,7 +110,7 @@ export default function AlbumDetail() {
     } finally {
       setIsLoading(false);
     }
-  }, [albumId, navigate]);
+  }, [albumId, navigate, authenticatedFetch]);
 
   useEffect(() => {
     fetchAlbum();
@@ -124,12 +120,8 @@ export default function AlbumDetail() {
     if (!albumId) return;
 
     try {
-      const token = localStorage.getItem('access_token');
-      await fetch(`${API_URL}/v1/media/albums/${albumId}`, {
+      await authenticatedFetch(`${API_URL}/v1/media/albums/${albumId}`, {
         method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       });
 
       toast.success('Альбом удалён');
@@ -149,11 +141,9 @@ export default function AlbumDetail() {
       const fileIds = await uploadFiles(files);
 
       if (fileIds.length > 0) {
-        const token = localStorage.getItem('access_token');
-        await fetch(`${API_URL}/v1/media/albums/${albumId}/attach`, {
+        await authenticatedFetch(`${API_URL}/v1/media/albums/${albumId}/attach`, {
           method: 'PATCH',
           headers: {
-            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ files_uuids: fileIds }),
@@ -203,11 +193,9 @@ export default function AlbumDetail() {
       );
 
       if (fileIds.length > 0) {
-        const token = localStorage.getItem('access_token');
-        await fetch(`${API_URL}/v1/media/albums/${albumId}/attach`, {
+        await authenticatedFetch(`${API_URL}/v1/media/albums/${albumId}/attach`, {
           method: 'PATCH',
           headers: {
-            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ files_uuids: fileIds }),

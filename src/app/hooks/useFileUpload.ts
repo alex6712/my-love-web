@@ -1,8 +1,7 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { MEDIA_CONFIG, formatFileSize, isSupportedType } from '../constants/media';
-
-const API_URL = import.meta.env.VITE_API_URL || 'https://api.my-love-application.ru';
+import { API_URL } from '../constants/api';
 
 function generateIdempotencyKey(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -21,6 +20,10 @@ export interface UploadProgress {
   error?: string;
 }
 
+interface UseFileUploadOptions {
+  authenticatedFetch: (url: string, options?: RequestInit) => Promise<Response>;
+}
+
 interface UseFileUploadReturn {
   uploads: UploadProgress[];
   uploadFile: (file: File, title: string, description?: string) => Promise<string>;
@@ -30,7 +33,10 @@ interface UseFileUploadReturn {
   isUploading: boolean;
 }
 
-export function useFileUpload(): UseFileUploadReturn {
+export function useFileUpload(options?: UseFileUploadOptions): UseFileUploadReturn {
+  const authenticatedFetch = options?.authenticatedFetch;
+  const fetchWithAuth = authenticatedFetch || fetch.bind(undefined);
+
   const [uploads, setUploads] = useState<UploadProgress[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -65,7 +71,7 @@ export function useFileUpload(): UseFileUploadReturn {
   ): Promise<{ file_id: string; presigned_url: string }> => {
     const token = localStorage.getItem('access_token');
     const idempotencyKey = generateIdempotencyKey();
-    const response = await fetch(`${API_URL}/v1/media/upload/direct`, {
+    const response = await fetchWithAuth(`${API_URL}/v1/media/upload/direct`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -128,7 +134,7 @@ export function useFileUpload(): UseFileUploadReturn {
   const confirmUpload = async (fileId: string): Promise<void> => {
     const token = localStorage.getItem('access_token');
     const idempotencyKey = generateIdempotencyKey();
-    const response = await fetch(`${API_URL}/v1/media/upload/confirm`, {
+    const response = await fetchWithAuth(`${API_URL}/v1/media/upload/confirm`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,

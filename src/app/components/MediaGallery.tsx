@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, FolderHeart, Image as ImageIcon, Calendar, MoreVertical, Trash2, Edit2, ExternalLink } from 'lucide-react';
+import { useAuth } from './AuthContext';
+import { API_URL } from '../constants/api';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
@@ -45,10 +47,9 @@ interface Album {
   created_at: string;
 }
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://api.my-love-application.ru';
-
 export default function MediaGallery() {
   const navigate = useNavigate();
+  const { authenticatedFetch } = useAuth();
   const [albums, setAlbums] = useState<Album[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -64,12 +65,7 @@ export default function MediaGallery() {
 
   const fetchAlbums = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_URL}/v1/media/albums`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await authenticatedFetch(`${API_URL}/v1/media/albums`);
 
       if (response.ok) {
         const data = await response.json();
@@ -90,11 +86,9 @@ export default function MediaGallery() {
   const createAlbum = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_URL}/v1/media/albums`, {
+      const response = await authenticatedFetch(`${API_URL}/v1/media/albums`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -120,12 +114,8 @@ export default function MediaGallery() {
 
   const deleteAlbum = async (albumId: string) => {
     try {
-      const token = localStorage.getItem('access_token');
-      await fetch(`${API_URL}/v1/media/albums/${albumId}`, {
+      await authenticatedFetch(`${API_URL}/v1/media/albums/${albumId}`, {
         method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       });
 
       toast.success('Альбом удалён');
