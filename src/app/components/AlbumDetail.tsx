@@ -41,6 +41,7 @@ import { useAuth } from './AuthContext';
 import { API_URL } from '../constants/api';
 import { useFileUpload, UploadProgress } from '../hooks/useFileUpload';
 import { MEDIA_CONFIG, formatFileSize } from '../constants/media';
+import { getDownloadPresignedUrl } from '../utils/fileApi';
 import { toast } from 'sonner';
 
 interface CreatorDTO {
@@ -54,6 +55,7 @@ interface CreatorDTO {
 interface FileDTO {
   id: string;
   object_key: string;
+  status: 'PENDING' | 'UPLOADED' | 'FAILED' | 'DELETED';
   content_type: string;
   title: string;
   description?: string | null;
@@ -64,12 +66,12 @@ interface FileDTO {
 
 interface AlbumWithItemsDTO {
   id: string;
+  created_at: string;
   title: string;
   description?: string | null;
   cover_url?: string | null;
   is_private: boolean;
   creator: CreatorDTO;
-  created_at: string;
   items: FileDTO[];
 }
 
@@ -85,6 +87,7 @@ export default function AlbumDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
   const [selectedFile, setSelectedFile] = useState<FileDTO | null>(null);
+  const [fileUrls, setFileUrls] = useState<Record<string, string>>({});
   const [isDragOver, setIsDragOver] = useState(false);
   const [newFileTitle, setNewFileTitle] = useState('');
   const [newFileDescription, setNewFileDescription] = useState('');
@@ -103,6 +106,19 @@ export default function AlbumDetail() {
 
       const data = await response.json();
       setAlbum(data.album);
+
+      const urls: Record<string, string> = {};
+      for (const item of data.album.items || []) {
+        if (item.content_type.startsWith('image/') || item.content_type.startsWith('video/')) {
+          try {
+            const presignedUrl = await getDownloadPresignedUrl(item.id);
+            urls[item.id] = presignedUrl;
+          } catch (error) {
+            console.error(`Failed to get URL for file ${item.id}:`, error);
+          }
+        }
+      }
+      setFileUrls(urls);
     } catch (error) {
       console.error('Error fetching album:', error);
       toast.error('Не удалось загрузить альбом');
@@ -383,7 +399,7 @@ export default function AlbumDetail() {
                 <div className="aspect-square bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center">
                   {file.content_type.startsWith('image/') ? (
                     <img
-                      src={`${API_URL}/v1/media/files/${file.id}`}
+                      src={fileUrls[file.id] || ''}
                       alt={file.title}
                       className="w-full h-full object-cover rounded-t-lg"
                     />
@@ -415,7 +431,7 @@ export default function AlbumDetail() {
             <div className="space-y-4">
               {selectedFile.content_type.startsWith('image/') && (
                 <img
-                  src={`${API_URL}/v1/media/files/${selectedFile.id}`}
+                  src={fileUrls[selectedFile.id] || ''}
                   alt={selectedFile.title}
                   className="w-full rounded-lg"
                 />

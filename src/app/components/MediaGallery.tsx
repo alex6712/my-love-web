@@ -39,12 +39,12 @@ interface CreatorDTO {
 
 interface Album {
   id: string;
+  created_at: string;
   title: string;
   description?: string | null;
   cover_url?: string | null;
   is_private: boolean;
   creator: CreatorDTO;
-  created_at: string;
 }
 
 export default function MediaGallery() {

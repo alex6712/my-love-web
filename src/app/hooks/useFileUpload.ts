@@ -71,7 +71,7 @@ export function useFileUpload(options?: UseFileUploadOptions): UseFileUploadRetu
   ): Promise<{ file_id: string; presigned_url: string }> => {
     const token = localStorage.getItem('access_token');
     const idempotencyKey = generateIdempotencyKey();
-    const response = await fetchWithAuth(`${API_URL}/v1/media/upload/direct`, {
+    const response = await fetchWithAuth(`${API_URL}/v1/media/files/upload/direct`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -134,7 +134,7 @@ export function useFileUpload(options?: UseFileUploadOptions): UseFileUploadRetu
   const confirmUpload = async (fileId: string): Promise<void> => {
     const token = localStorage.getItem('access_token');
     const idempotencyKey = generateIdempotencyKey();
-    const response = await fetchWithAuth(`${API_URL}/v1/media/upload/confirm`, {
+    const response = await fetchWithAuth(`${API_URL}/v1/media/files/upload/confirm`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,

@@ -13,14 +13,15 @@ import { toast } from 'sonner';
 
 interface Partner {
   id: string;
+  created_at: string;
   username: string;
   avatar_url?: string | null;
   is_active: boolean;
-  created_at: string;
 }
 
 interface CoupleRequest {
   id: string;
+  created_at: string;
   initiator: Partner;
   recipient: Partner;
   status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'EXPIRED';

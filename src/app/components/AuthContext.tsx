@@ -184,7 +184,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         const response = await fetch(`${API_URL}/v1/auth/refresh`, {
-          method: 'GET',
+          method: 'POST',
           headers: {
             'Authorization': `Bearer ${refresh}`,
           },
