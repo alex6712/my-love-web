@@ -1,45 +1,40 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
+import { defineConfig, loadEnv } from 'vite'
+import react from '@vitejs/plugin-react'
+import path from 'node:path'
 
-// https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@app': path.resolve(__dirname, './src/app'),
-      '@pages': path.resolve(__dirname, './src/pages'),
-      '@widgets': path.resolve(__dirname, './src/widgets'),
-      '@features': path.resolve(__dirname, './src/features'),
-      '@entities': path.resolve(__dirname, './src/entities'),
-      '@shared': path.resolve(__dirname, './src/shared'),
-    },
-  },
-  server: {
-    port: 3000,
-    host: true,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+
+  return {
+    plugins: [react()],
+    resolve: {
+      alias: {
+        '@': path.resolve(process.cwd(), './src'),
       },
     },
-  },
-  build: {
-    outDir: 'dist',
-    sourcemap: true,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          query: ['@tanstack/react-query'],
-          ui: ['clsx', 'date-fns', 'lucide-react'],
+    server: {
+      port: 5173,
+      proxy: {
+        '/api': {
+          target: env.VITE_API_URL || 'http://localhost:8000',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api/, ''),
         },
       },
     },
-  },
-  // Важно для SPA: всегда отдавать index.html
-  appType: 'spa',
-});
+    build: {
+      outDir: 'dist',
+      sourcemap: true,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+            'query-vendor': ['@tanstack/react-query'],
+            'state-vendor': ['zustand'],
+            'ui-vendor': ['axios', 'lucide-react'],
+          },
+        },
+      },
+    },
+  }
+})

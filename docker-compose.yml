@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: my-love-web
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - my-love-network
+
+  backend:
+    image: ghcr.io/alex6712/my-love-backend:latest
+    container_name: my-love-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTGRES_HOST=postgres
+      - REDIS_HOST=redis
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    networks:
+      - my-love-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: my-love-postgres
+    environment:
+      - POSTGRES_USER=mylove
+      - POSTGRES_PASSWORD=mylove_password
+      - POSTGRES_DB=mylove
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - my-love-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: my-love-redis
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - my-love-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  my-love-network:
+    driver: bridge

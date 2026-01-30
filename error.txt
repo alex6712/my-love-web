@@ -1,0 +1,9 @@
+PS C:\Users\Алексей Ванюков\programming\projects\my-love-web> bun run build
+$ tsc -b && vite build
+src/pages/albums/index.tsx:130:45 - error TS1110: Type expected.
+
+130                     {album.items.map((file: => (
+                                                ~~
+
+
+Found 1 error.
