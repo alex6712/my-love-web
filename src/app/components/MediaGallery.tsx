@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, FolderHeart, Image as ImageIcon, Calendar, MoreVertical, Trash2, Edit2, ExternalLink } from 'lucide-react';
+import { Plus, FolderHeart, Image as ImageIcon, Calendar, MoreVertical, Trash2, Edit2, ExternalLink, Search, X } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { API_URL } from '../constants/api';
 import { Button } from './ui/button';
@@ -28,31 +28,17 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { toast } from 'sonner';
-
-interface CreatorDTO {
-  id: string;
-  username: string;
-  avatar_url?: string | null;
-  is_active: boolean;
-  created_at: string;
-}
-
-interface Album {
-  id: string;
-  created_at: string;
-  title: string;
-  description?: string | null;
-  cover_url?: string | null;
-  is_private: boolean;
-  creator: CreatorDTO;
-}
+import { searchAlbums, AlbumDTO } from '../utils/albumsApi';
 
 export default function MediaGallery() {
   const navigate = useNavigate();
   const { authenticatedFetch } = useAuth();
-  const [albums, setAlbums] = useState<Album[]>([]);
+  const [albums, setAlbums] = useState<AlbumDTO[]>([]);
+  const [filteredAlbums, setFilteredAlbums] = useState<AlbumDTO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
   const [newAlbum, setNewAlbum] = useState({
     title: '',
     description: '',
@@ -63,24 +49,58 @@ export default function MediaGallery() {
     fetchAlbums();
   }, []);
 
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      handleSearch();
+    } else {
+      setFilteredAlbums(albums);
+    }
+  }, [searchQuery, albums]);
+
   const fetchAlbums = async () => {
     try {
       const response = await authenticatedFetch(`${API_URL}/v1/media/albums`);
 
       if (response.ok) {
         const data = await response.json();
-        setAlbums(Array.isArray(data.albums) ? data.albums : []);
+        const fetchedAlbums = Array.isArray(data.albums) ? data.albums : [];
+        setAlbums(fetchedAlbums);
+        setFilteredAlbums(fetchedAlbums);
       } else {
         setAlbums([]);
+        setFilteredAlbums([]);
         toast.error('Не удалось загрузить альбомы');
       }
     } catch (error) {
       console.error('Error fetching albums:', error);
       setAlbums([]);
+      setFilteredAlbums([]);
       toast.error('Ошибка при загрузке альбомов');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim() || searchQuery.length < 2) {
+      setFilteredAlbums(albums);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const results = await searchAlbums(searchQuery, 0.15, 20);
+      setFilteredAlbums(results);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Ошибка поиска');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    setFilteredAlbums(albums);
   };
 
   const createAlbum = async (e: React.FormEvent) => {
@@ -193,21 +213,56 @@ export default function MediaGallery() {
         </Dialog>
       </div>
 
-      {albums.length === 0 ? (
+      <div className="mb-6">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Input
+            placeholder="Поиск альбомов..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 pr-10"
+          />
+          {searchQuery && (
+            <button
+              onClick={clearSearch}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {isSearching ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <Search className="w-12 h-12 text-gray-400 animate-pulse mx-auto mb-2" />
+            <p className="text-gray-600">Поиск...</p>
+          </div>
+        </div>
+      ) : filteredAlbums.length === 0 ? (
         <Card>
           <CardContent className="py-16 text-center">
             <FolderHeart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg mb-2">Пока нет альбомов</h3>
-            <p className="text-gray-600 mb-4">Создайте первый альбом для ваших воспоминаний</p>
-            <Button onClick={() => setDialogOpen(true)} className="bg-red-500 hover:bg-red-600">
-              <Plus className="w-4 h-4 mr-2" />
-              Создать альбом
-            </Button>
+            <h3 className="text-lg mb-2">
+              {searchQuery ? 'Альбомы не найдены' : 'Пока нет альбомов'}
+            </h3>
+            <p className="text-gray-600 mb-4">
+              {searchQuery
+                ? 'Попробуйте изменить запрос'
+                : 'Создайте первый альбом для ваших воспоминаний'}
+            </p>
+            {!searchQuery && (
+              <Button onClick={() => setDialogOpen(true)} className="bg-red-500 hover:bg-red-600">
+                <Plus className="w-4 h-4 mr-2" />
+                Создать альбом
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {albums.map((album) => (
+          {filteredAlbums.map((album) => (
             <Card
               key={album.id}
               className="group hover:shadow-lg transition-shadow"

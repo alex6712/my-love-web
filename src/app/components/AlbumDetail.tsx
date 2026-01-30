@@ -10,8 +10,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  MoreVertical,
   ExternalLink,
+  Link2,
+  Link2Off,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
@@ -25,6 +26,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from './ui/dialog';
 import {
   AlertDialog,
@@ -42,6 +44,7 @@ import { API_URL } from '../constants/api';
 import { useFileUpload, UploadProgress } from '../hooks/useFileUpload';
 import { MEDIA_CONFIG, formatFileSize } from '../constants/media';
 import { getDownloadPresignedUrl } from '../utils/fileApi';
+import { detachFilesFromAlbum } from '../utils/albumsApi';
 import { toast } from 'sonner';
 
 interface CreatorDTO {
@@ -88,10 +91,10 @@ export default function AlbumDetail() {
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
   const [selectedFile, setSelectedFile] = useState<FileDTO | null>(null);
   const [fileUrls, setFileUrls] = useState<Record<string, string>>({});
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [newFileTitle, setNewFileTitle] = useState('');
-  const [newFileDescription, setNewFileDescription] = useState('');
-  const [fileDialogOpen, setFileDialogOpen] = useState(false);
+  const [detachConfirmOpen, setDetachConfirmOpen] = useState(false);
+  const [fileToDetach, setFileToDetach] = useState<FileDTO | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchAlbum = useCallback(async () => {
@@ -196,41 +199,25 @@ export default function AlbumDetail() {
     }
   };
 
-  const handleAddSingleFile = async () => {
-    if (!albumId || !fileInputRef.current?.files?.[0]) return;
-
-    const file = fileInputRef.current.files[0];
-    setIsUploadingFiles(true);
+  const handleDetachFile = async () => {
+    if (!albumId || !fileToDetach) return;
 
     try {
-      const fileIds = await uploadFiles(
-        fileInputRef.current.files,
-        newFileTitle || file.name
-      );
-
-      if (fileIds.length > 0) {
-        await authenticatedFetch(`${API_URL}/v1/media/albums/${albumId}/attach`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ files_uuids: fileIds }),
-        });
-
-        toast.success('Файл добавлен в альбом');
-        setNewFileTitle('');
-        setNewFileDescription('');
-        setFileDialogOpen(false);
-        fetchAlbum();
-      }
+      await detachFilesFromAlbum(albumId, [fileToDetach.id]);
+      toast.success('Файл откреплён от альбома');
+      setFileToDetach(null);
+      setDetachConfirmOpen(false);
+      fetchAlbum();
     } catch (error) {
-      console.error('Error uploading file:', error);
-    } finally {
-      setIsUploadingFiles(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      console.error('Error detaching file:', error);
+      toast.error('Не удалось открепить файл');
     }
+  };
+
+  const openDetachDialog = (file: FileDTO, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setFileToDetach(file);
+    setDetachConfirmOpen(true);
   };
 
   const isOwner = album?.creator.id === user?.id;
@@ -267,7 +254,7 @@ export default function AlbumDetail() {
         Назад к галерее
       </Button>
 
-      <div className="mb-8">
+      <div className="mb-6">
         <div className="flex items-start justify-between mb-4">
           <div>
             <h1 className="text-3xl mb-2">{album.title}</h1>
@@ -279,81 +266,99 @@ export default function AlbumDetail() {
             </p>
           </div>
 
-          {isOwner && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" className="text-red-500 hover:bg-red-50">
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Удалить альбом
+          <div className="flex gap-2">
+            <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-red-500 hover:bg-red-600">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Загрузить
                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Удалить альбом?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Это действие нельзя отменить. Все файлы в альбоме будут удалены.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Отмена</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteAlbum} className="bg-red-500 hover:bg-red-600">
-                    Удалить
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
-        </div>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Загрузить файлы</DialogTitle>
+                  <DialogDescription>
+                    Перетащите файлы или нажмите для выбора
+                  </DialogDescription>
+                </DialogHeader>
+                <div
+                  className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
+                    isDragOver
+                      ? 'border-red-400 bg-red-50'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    accept={MEDIA_CONFIG.SUPPORTED_TYPES.join(',')}
+                    onChange={handleFileSelect}
+                    multiple
+                  />
 
-        <div
-          className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
-            isDragOver
-              ? 'border-red-400 bg-red-50'
-              : 'border-gray-300 hover:border-gray-400'
-          }`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            className="hidden"
-            accept={MEDIA_CONFIG.SUPPORTED_TYPES.join(',')}
-            onChange={handleFileSelect}
-            multiple
-          />
+                  <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <p className="text-lg mb-2">Перетащите файлы сюда</p>
+                  <p className="text-sm text-gray-500 mb-4">
+                    или нажмите для выбора
+                  </p>
+                  <div className="flex justify-center gap-4 text-xs text-gray-400 mb-4">
+                    <span>Макс. размер: {formatFileSize(MEDIA_CONFIG.MAX_FILE_SIZE_BYTES)}</span>
+                    <span>•</span>
+                    <span>
+                      {MEDIA_CONFIG.SUPPORTED_TYPES.map((t) => t.split('/')[1]).join(', ')}
+                    </span>
+                  </div>
 
-          <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-          <p className="text-lg mb-2">Перетащите файлы сюда</p>
-          <p className="text-sm text-gray-500 mb-4">
-            или нажмите для выбора
-          </p>
-          <div className="flex justify-center gap-4 text-xs text-gray-400">
-            <span>Макс. размер: {formatFileSize(MEDIA_CONFIG.MAX_FILE_SIZE_BYTES)}</span>
-            <span>•</span>
-            <span>
-              {MEDIA_CONFIG.SUPPORTED_TYPES.map((t) => t.split('/')[1]).join(', ')}
-            </span>
-          </div>
+                  <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingFiles}
+                    className="bg-red-500 hover:bg-red-600"
+                  >
+                    {isUploadingFiles ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Upload className="w-4 h-4 mr-2" />
+                    )}
+                    Выбрать файлы
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
 
-          <Button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploadingFiles}
-            className="mt-4 bg-red-500 hover:bg-red-600"
-          >
-            {isUploadingFiles ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Upload className="w-4 h-4 mr-2" />
+            {isOwner && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="text-red-500 hover:bg-red-50">
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Удалить альбом
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Удалить альбом?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Это действие нельзя отменить. Все файлы в альбоме будут удалены.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Отмена</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteAlbum} className="bg-red-500 hover:bg-red-600">
+                      Удалить
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
-            Выбрать файлы
-          </Button>
+          </div>
         </div>
       </div>
 
       {uploads.length > 0 && (
-        <Card className="mb-8">
+        <Card className="mb-6">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Загрузка файлов</h2>
@@ -383,9 +388,13 @@ export default function AlbumDetail() {
             <CardContent className="py-12 text-center">
               <FileImage className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600">В этом альбоме пока нет файлов</p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 mb-4">
                 Загрузите фотографии или видео, чтобы сохранить воспоминания
               </p>
+              <Button onClick={() => setUploadDialogOpen(true)} className="bg-red-500 hover:bg-red-600">
+                <Upload className="w-4 h-4 mr-2" />
+                Загрузить файлы
+              </Button>
             </CardContent>
           </Card>
         ) : (
@@ -393,7 +402,7 @@ export default function AlbumDetail() {
             {album.items.map((file) => (
               <Card
                 key={file.id}
-                className="group cursor-pointer hover:shadow-lg transition-shadow"
+                className="group cursor-pointer hover:shadow-lg transition-shadow relative"
                 onClick={() => setSelectedFile(file)}
               >
                 <div className="aspect-square bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center">
@@ -415,6 +424,16 @@ export default function AlbumDetail() {
                     {new Date(file.created_at).toLocaleDateString()}
                   </p>
                 </CardContent>
+
+                {isOwner && (
+                  <button
+                    onClick={(e) => openDetachDialog(file, e)}
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white rounded-full p-1.5"
+                    title="Открепить от альбома"
+                  >
+                    <Link2Off className="w-3.5 h-3.5 text-gray-600" />
+                  </button>
+                )}
               </Card>
             ))}
           </div>
@@ -451,6 +470,23 @@ export default function AlbumDetail() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={detachConfirmOpen} onOpenChange={setDetachConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Открепить файл?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Файл будет удалён из этого альбома, но останется в медиатеке.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDetachFile} className="bg-red-500 hover:bg-red-600">
+              Открепить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
