@@ -1,0 +1,1457 @@
+{
+  "APICode": {
+    "type": "string",
+    "enum": [
+      "SUCCESS",
+      "RESOURCE_NOT_FOUND",
+      "VALIDATION_ERROR",
+      "INCORRECT_USERNAME_PASSWORD",
+      "TOKEN_NOT_PASSED",
+      "INVALID_TOKEN",
+      "TOKEN_SIGNATURE_EXPIRED",
+      "TOKEN_REVOKED",
+      "INVALID_IDEMPOTENCY_KEY",
+      "IDEMPOTENCY_CONFLICT",
+      "UNIQUE_CONFLICT",
+      "COUPLE_NOT_SELF",
+      "ALBUM_NOT_FOUND",
+      "FILE_NOT_FOUND",
+      "UNSUPPORTED_FILE_TYPE",
+      "UPLOAD_NOT_COMPLETED",
+      "RATE_LIMIT_EXCEEDED"
+    ],
+    "title": "APICode",
+    "description": "Класс-перечисление для представления кодов ответов API.\n\nПредставляет собой единое перечисление всех возможных\nответов API с их описанием и use cases.\n\nAttributes\n----------\nSUCCESS\n    Успех.\nRESOURCE_NOT_FOUND\n    Ресурс не найден.\nVALIDATION_ERROR\n    Неверные данные.\nINCORRECT_USERNAME_PASSWORD\n    Неверное имя пользователя или пароль.\nTOKEN_NOT_PASSED\n    Токен не передан.\nINVALID_TOKEN\n    Неверный токен.\nTOKEN_SIGNATURE_EXPIRED\n    Подпись токена просрочена.\nTOKEN_REVOKED\n    Токен отозван.\nINVALID_IDEMPOTENCY_KEY\n    Неверный формат ключа идемпотентности.\nIDEMPOTENCY_CONFLICT\n    Запрос уже в обработке.\nUNIQUE_CONFLICT\n    Конфликт уникальности.\nCOUPLE_NOT_SELF\n    Запрещена пользовательская пара с самим собой.\nALBUM_NOT_FOUND\n    Медиа-альбом не найден.\nFILE_NOT_FOUND\n    Медиа-файл не найден.\nUNSUPPORTED_FILE_TYPE\n    Не поддерживаемый тип файла.\nUPLOAD_NOT_COMPLETED\n    ФАйл не найден в объектном хранилище.\nRATE_LIMIT_EXCEEDED\n    Превышено максимальное количество запросов за единицу времени."
+  },
+  "AlbumDTO": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "title": "Id"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time",
+        "title": "Created At"
+      },
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "description": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Description"
+      },
+      "cover_url": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Cover Url"
+      },
+      "is_private": {
+        "type": "boolean",
+        "title": "Is Private"
+      },
+      "creator": {
+        "$ref": "#/components/schemas/CreatorDTO"
+      }
+    },
+    "type": "object",
+    "required": [
+      "id",
+      "created_at",
+      "title",
+      "description",
+      "cover_url",
+      "is_private",
+      "creator"
+    ],
+    "title": "AlbumDTO",
+    "description": "DTO для представления медиа альбома.\n\nAttributes\n----------\ntitle : str\n    Наименование альбома.\ndescription : str | None\n    Описание альбома.\ncover_url : str | None\n    URL обложки альбома.\nis_private : bool\n    Видимость альбома (True - личный или False - публичный).\ncreator : CreatorDTO\n    DTO пользователя, создавшего альбом."
+  },
+  "AlbumResponse": {
+    "properties": {
+      "code": {
+        "$ref": "#/components/schemas/APICode",
+        "description": "Статус ответа от сервера в виде API Enum",
+        "default": "SUCCESS",
+        "examples": [
+          "SUCCESS"
+        ]
+      },
+      "detail": {
+        "type": "string",
+        "title": "Detail",
+        "description": "Сообщение о выполненных на сервере действиях",
+        "default": "Success!",
+        "examples": [
+          "Success!"
+        ]
+      },
+      "album": {
+        "$ref": "#/components/schemas/AlbumWithItemsDTO",
+        "description": "Подробная информация о медиа-альбоме."
+      }
+    },
+    "type": "object",
+    "required": [
+      "album"
+    ],
+    "title": "AlbumResponse",
+    "description": "Модель ответа сервера с вложенной информацией о медиа-альбоме.\n\nИспользуется в качестве ответа сервера на запрос о конкретном\nальбоме.\n\nОбычно это означает, что запрашиваемая информация\nбудет выводиться в окне просмотра альбома, поэтому возвращаемый DTO\nтакже содержит информацию и обо всех входящих в альбом медиа-файлах.\n\nAttributes\n----------\nalbum : AlbumWithItemsDTO\n    Подробный DTO медиа альбома."
+  },
+  "AlbumWithItemsDTO": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "title": "Id"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time",
+        "title": "Created At"
+      },
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "description": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Description"
+      },
+      "cover_url": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Cover Url"
+      },
+      "is_private": {
+        "type": "boolean",
+        "title": "Is Private"
+      },
+      "creator": {
+        "$ref": "#/components/schemas/CreatorDTO"
+      },
+      "items": {
+        "items": {
+          "$ref": "#/components/schemas/FileDTO"
+        },
+        "type": "array",
+        "title": "Items"
+      }
+    },
+    "type": "object",
+    "required": [
+      "id",
+      "created_at",
+      "title",
+      "description",
+      "cover_url",
+      "is_private",
+      "creator",
+      "items"
+    ],
+    "title": "AlbumWithItemsDTO",
+    "description": "DTO для представления подробной информации о медиа-альбоме.\n\nНаследуется от `AlbumDTO` и добавляет атрибут `items`,\nв котором сохранены все медиа-файлы, добавленные в\nмедиа-альбом.\n\nAttributes\n----------\nitems : list[FileDTO]\n    Все добавленные в альбом медиа-файлы."
+  },
+  "AlbumsResponse": {
+    "properties": {
+      "code": {
+        "$ref": "#/components/schemas/APICode",
+        "description": "Статус ответа от сервера в виде API Enum",
+        "default": "SUCCESS",
+        "examples": [
+          "SUCCESS"
+        ]
+      },
+      "detail": {
+        "type": "string",
+        "title": "Detail",
+        "description": "Сообщение о выполненных на сервере действиях",
+        "default": "Success!",
+        "examples": [
+          "Success!"
+        ]
+      },
+      "albums": {
+        "items": {
+          "$ref": "#/components/schemas/AlbumDTO"
+        },
+        "type": "array",
+        "title": "Albums",
+        "description": "Список всех альбомов, подходящих под фильтры."
+      }
+    },
+    "type": "object",
+    "required": [
+      "albums"
+    ],
+    "title": "AlbumsResponse",
+    "description": "Модель ответа сервера с вложенным списком альбомов.\n\nИспользуется в качестве ответа с сервера на запрос о получении\nальбомов пользователем.\n\nAttributes\n----------\nalbums : list[AlbumDTO]\n    Список всех альбомов, подходящих под фильтры."
+  },
+  "AppInfoResponse": {
+    "properties": {
+      "code": {
+        "$ref": "#/components/schemas/APICode",
+        "description": "Статус ответа от сервера в виде API Enum",
+        "default": "SUCCESS",
+        "examples": [
+          "SUCCESS"
+        ]
+      },
+      "detail": {
+        "type": "string",
+        "title": "Detail",
+        "description": "Сообщение о выполненных на сервере действиях",
+        "default": "Success!",
+        "examples": [
+          "Success!"
+        ]
+      },
+      "app_name": {
+        "type": "string",
+        "title": "App Name",
+        "examples": [
+          "Fast API"
+        ]
+      },
+      "app_version": {
+        "type": "string",
+        "title": "App Version",
+        "examples": [
+          "0.0.0"
+        ]
+      },
+      "app_description": {
+        "type": "string",
+        "title": "App Description",
+        "examples": [
+          "REST API using FastAPI Python 3.12"
+        ]
+      },
+      "app_summary": {
+        "type": "string",
+        "title": "App Summary",
+        "examples": [
+          "The best web-application."
+        ]
+      },
+      "admin_name": {
+        "type": "string",
+        "title": "Admin Name",
+        "examples": [
+          "John Doe"
+        ]
+      },
+      "admin_email": {
+        "type": "string",
+        "format": "email",
+        "title": "Admin Email",
+        "examples": [
+          "john.doe@gmail.com"
+        ]
+      }
+    },
+    "type": "object",
+    "required": [
+      "app_name",
+      "app_version",
+      "app_description",
+      "app_summary",
+      "admin_name",
+      "admin_email"
+    ],
+    "title": "AppInfoResponse",
+    "description": "Модель ответа на запрос информации о приложении.\n\nСм. ``StandardResponse`` для получения информации об унаследованных атрибутах.\n\nSee Also\n--------\n.standard.StandardResponse\n\nAttributes\n----------\napp_name : str\n    Название приложения.\napp_version : str\n    Текущая версия приложения.\napp_description : str\n    Полное описание приложения.\napp_summary : str\n    Краткое описание приложения.\nadmin_name : str\n    Имя ответственного лица.\nadmin_email : str\n    Адрес электронной почты для связи с ответственным лицом."
+  },
+  "AttachFilesRequest": {
+    "properties": {
+      "files_uuids": {
+        "items": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "type": "array",
+        "title": "Files Uuids",
+        "description": "Список UUID медиа-файлов, которые необходимо добавить в альбом.",
+        "examples": [
+          [
+            "681cbf12-fe3f-41f4-92f1-c8cb33dfe47e",
+            "f466bb69-bf31-4125-a29a-35166033e4ef"
+          ]
+        ]
+      }
+    },
+    "type": "object",
+    "required": [
+      "files_uuids"
+    ],
+    "title": "AttachFilesRequest",
+    "description": "Схема запроса на добавления медиа-файлов к альбому.\n\nИспользуется в качестве представления информации о списке\nдобавляемых в медиа альбом файлов.\n\nAttributes\n----------\nfiles_uuids : list[UUID]\n    Список UUID медиа-файлов к добавлению."
+  },
+  "Body_login_v1_auth_login_post": {
+    "properties": {
+      "grant_type": {
+        "anyOf": [
+          {
+            "type": "string",
+            "pattern": "^password$"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Grant Type"
+      },
+      "username": {
+        "type": "string",
+        "title": "Username"
+      },
+      "password": {
+        "type": "string",
+        "format": "password",
+        "title": "Password"
+      },
+      "scope": {
+        "type": "string",
+        "title": "Scope",
+        "default": ""
+      },
+      "client_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Client Id"
+      },
+      "client_secret": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "format": "password",
+        "title": "Client Secret"
+      }
+    },
+    "type": "object",
+    "required": [
+      "username",
+      "password"
+    ],
+    "title": "Body_login_v1_auth_login_post"
+  },
+  "ConfirmUploadRequest": {
+    "properties": {
+      "file_id": {
+        "type": "string",
+        "format": "uuid",
+        "title": "File Id",
+        "description": "UUID загруженного файла.",
+        "examples": [
+          "ccdc1e34-8772-4537-bdba-5e45c4be5d7c"
+        ]
+      }
+    },
+    "type": "object",
+    "required": [
+      "file_id"
+    ],
+    "title": "ConfirmUploadRequest",
+    "description": "Схема запроса на подтверждения завершения загрузки медиа-файла.\n\nAttributes\n----------\nfile_id : UUID\n    UUID загруженного файла."
+  },
+  "CoupleRequestDTO": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "title": "Id"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time",
+        "title": "Created At"
+      },
+      "initiator": {
+        "$ref": "#/components/schemas/PartnerDTO"
+      },
+      "recipient": {
+        "$ref": "#/components/schemas/PartnerDTO"
+      },
+      "status": {
+        "$ref": "#/components/schemas/CoupleRequestStatus"
+      },
+      "accepted_at": {
+        "anyOf": [
+          {
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Accepted At"
+      }
+    },
+    "type": "object",
+    "required": [
+      "id",
+      "created_at",
+      "initiator",
+      "recipient",
+      "status",
+      "accepted_at"
+    ],
+    "title": "CoupleRequestDTO",
+    "description": "DTO для представления пары между пользователями приложения.\n\nAttributes\n----------\ninitiator : PartnerDTO\n    DTO пользователя-инициатора.\nrecipient : PartnerDTO\n    DTO пользователя-реципиента.\nstatus : CoupleStatus\n    Текущий статус пары.\naccepted_at : datetime | None\n    Дата и время принятия приглашения в пару."
+  },
+  "CoupleRequestStatus": {
+    "type": "string",
+    "enum": [
+      "PENDING",
+      "ACCEPTED",
+      "DECLINED",
+      "EXPIRED"
+    ],
+    "title": "CoupleRequestStatus",
+    "description": "Класс-перечисление для представления вариантов статуса пары.\n\nПредставляет собой единое перечисление всех возможных\nстатусов пары между пользователями.\n\nAttributes\n----------\nPENDING\n    Приглашение объединиться в пару отправлено.\nACCEPTED\n    Приглашение объединиться в пару принято.\nDECLINED\n    Приглашение объединиться в пару отклонено.\nEXPIRED\n    Приглашение объединиться в пару истекло."
+  },
+  "CoupleRequestsResponse": {
+    "properties": {
+      "code": {
+        "$ref": "#/components/schemas/APICode",
+        "description": "Статус ответа от сервера в виде API Enum",
+        "default": "SUCCESS",
+        "examples": [
+          "SUCCESS"
+        ]
+      },
+      "detail": {
+        "type": "string",
+        "title": "Detail",
+        "description": "Сообщение о выполненных на сервере действиях",
+        "default": "Success!",
+        "examples": [
+          "Success!"
+        ]
+      },
+      "requests": {
+        "items": {
+          "$ref": "#/components/schemas/CoupleRequestDTO"
+        },
+        "type": "array",
+        "title": "Requests",
+        "description": "Список всех запросов, подходящих под фильтры."
+      }
+    },
+    "type": "object",
+    "required": [
+      "requests"
+    ],
+    "title": "CoupleRequestsResponse",
+    "description": "Модель ответа сервера с вложенным списком запросов на создание пары.\n\nИспользуется в качестве ответа с сервера на запрос о получении\nзапросов на создание пары.\n\nAttributes\n----------\nrequests : list[CoupleRequestDTO]\n    Список всех запросов, подходящих под фильтры."
+  },
+  "CreateAlbumRequest": {
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title",
+        "description": "Наименование медиа альбома",
+        "default": "Новый альбом",
+        "examples": [
+          "Поездка в Париж 2004"
+        ]
+      },
+      "description": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Description",
+        "description": "Описание медиа альбома",
+        "examples": [
+          "Альбом с романтичными видами Города Любви!"
+        ]
+      },
+      "cover_url": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Cover Url",
+        "description": "Ссылка на обложку медиа альбома",
+        "examples": [
+          "https://camo.githubusercontent.com/78a574a2925825ac33911b5a8bad6176bea158260c4581a72129bfa8d2ce87f3/68747470733a2f2f7777772e6963656769662e636f6d2f77702d636f6e74656e742f75706c6f6164732f323032332f30312f6963656769662d3136322e676966"
+        ]
+      },
+      "is_private": {
+        "type": "boolean",
+        "title": "Is Private",
+        "description": "Видимость альбома (True - личный или False - публичный)",
+        "default": false,
+        "examples": [
+          true,
+          false
+        ]
+      }
+    },
+    "type": "object",
+    "title": "CreateAlbumRequest",
+    "description": "Схема запроса на создание медиа-альбома.\n\nИспользуется в качестве представления информации о новом альбоме.\n\nAttributes\n----------\ntitle : str\n    Наименование альбома.\ndescription : str | None\n    Описание альбома.\ncover_url : str | None\n    URL обложки альбома.\nis_private : bool\n    Видимость альбома (True - личный или False - публичный)."
+  },
+  "CreateCoupleRequest": {
+    "properties": {
+      "partner_username": {
+        "type": "string",
+        "maxLength": 64,
+        "minLength": 1,
+        "title": "Partner Username",
+        "description": "Username пользователя-партнёра.",
+        "examples": [
+          "partner_username"
+        ]
+      }
+    },
+    "type": "object",
+    "required": [
+      "partner_username"
+    ],
+    "title": "CreateCoupleRequest",
+    "description": "Схема запроса на создание пары между пользователями.\n\nAttributes\n----------\npartner_username : str\n    Username пользователя-партнёра."
+  },
+  "CreateNoteRequest": {
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title",
+        "description": "Заголовок пользовательской заметки",
+        "default": "Новая заметка",
+        "examples": [
+          "Новый телефон"
+        ]
+      },
+      "content": {
+        "type": "string",
+        "title": "Content",
+        "description": "Содержание пользовательской заметки",
+        "examples": [
+          "iPhone 15 Pro в цвете Natural Titanium"
+        ]
+      },
+      "type": {
+        "$ref": "#/components/schemas/NoteType",
+        "description": "Тип пользовательской заметки",
+        "examples": [
+          "WISHLIST"
+        ]
+      }
+    },
+    "type": "object",
+    "required": [
+      "content",
+      "type"
+    ],
+    "title": "CreateNoteRequest",
+    "description": "Схема запроса на создание пользовательской заметки.\n\nИспользуется в качестве представления информации о новой заметке.\nНаследуется от `UpdateNoteRequest`, т.к. имеет\nте же поля, но расширяет набор данных.\n\nAttributes\n----------\ntype : NoteType\n    Тип пользовательской заметки.\ntitle : str\n    Заголовок пользовательской заметки.\ncontent : str\n    Содержание пользовательской заметки."
+  },
+  "CreatorDTO": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "title": "Id"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time",
+        "title": "Created At"
+      },
+      "username": {
+        "type": "string",
+        "title": "Username"
+      },
+      "avatar_url": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Avatar Url"
+      },
+      "is_active": {
+        "type": "boolean",
+        "title": "Is Active"
+      }
+    },
+    "type": "object",
+    "required": [
+      "id",
+      "created_at",
+      "username",
+      "avatar_url",
+      "is_active"
+    ],
+    "title": "CreatorDTO",
+    "description": "DTO для представления создателя сущности.\n\nNotes\n-----\nНаследуется от `UserDTO`, имеет тот же самый\nнабор атрибутов. Выделен в отдельный класс из\nсоображений семантики."
+  },
+  "FileDTO": {
+    "properties": {
+      "content_type": {
+        "type": "string",
+        "title": "Content Type"
+      },
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "description": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Description"
+      },
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "title": "Id"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time",
+        "title": "Created At"
+      },
+      "object_key": {
+        "type": "string",
+        "title": "Object Key"
+      },
+      "status": {
+        "$ref": "#/components/schemas/FileStatus"
+      },
+      "geo_data": {
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Geo Data"
+      },
+      "creator": {
+        "$ref": "#/components/schemas/CreatorDTO"
+      }
+    },
+    "type": "object",
+    "required": [
+      "content_type",
+      "title",
+      "description",
+      "id",
+      "created_at",
+      "object_key",
+      "status",
+      "geo_data",
+      "creator"
+    ],
+    "title": "FileDTO",
+    "description": "DTO для представления медиа-файла.\n\nAttributes\n----------\nobject_key : str\n    Путь до файла внутри бакета приложения.\nstatus : FileStatus\n    Текущий статус медиа-файла.\ngeo_data : dict[str, Any] | None\n    Данные о местоположении сохранённого медиа\ncreator : CreatorDTO\n    DTO пользователя, создавшего медиа-файл."
+  },
+  "FileStatus": {
+    "type": "string",
+    "enum": [
+      "PENDING",
+      "UPLOADED",
+      "FAILED",
+      "DELETED"
+    ],
+    "title": "FileStatus",
+    "description": "Класс-перечисление для представления вариантов статуса медиа-файлов.\n\nПредставляет собой единое перечисление всех возможных\nстатусов медиа-файлов.\n\nAttributes\n----------\nPENDING\n    Клиенту отправлен Presigned URL.\nUPLOADED\n    Файл гарантированно загружен.\nFAILED\n    Произошла ошибка загрузки файла.\nDELETED\n    Клиент удалил файл."
+  },
+  "FilesResponse": {
+    "properties": {
+      "code": {
+        "$ref": "#/components/schemas/APICode",
+        "description": "Статус ответа от сервера в виде API Enum",
+        "default": "SUCCESS",
+        "examples": [
+          "SUCCESS"
+        ]
+      },
+      "detail": {
+        "type": "string",
+        "title": "Detail",
+        "description": "Сообщение о выполненных на сервере действиях",
+        "default": "Success!",
+        "examples": [
+          "Success!"
+        ]
+      },
+      "files": {
+        "items": {
+          "$ref": "#/components/schemas/FileDTO"
+        },
+        "type": "array",
+        "title": "Files",
+        "description": "Список всех файлов, подходящих под фильтры."
+      }
+    },
+    "type": "object",
+    "required": [
+      "files"
+    ],
+    "title": "FilesResponse",
+    "description": "Модель ответа сервера с вложенным списком файлов.\n\nИспользуется в качестве ответа с сервера на запрос о получении\nфайлов пользователем.\n\nAttributes\n----------\nfiles : list[AlbumDTO]\n    Список всех файлов, подходящих под фильтры."
+  },
+  "NoteDTO": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "title": "Id"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time",
+        "title": "Created At"
+      },
+      "type": {
+        "$ref": "#/components/schemas/NoteType"
+      },
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "content": {
+        "type": "string",
+        "title": "Content"
+      },
+      "creator": {
+        "$ref": "#/components/schemas/CreatorDTO"
+      }
+    },
+    "type": "object",
+    "required": [
+      "id",
+      "created_at",
+      "type",
+      "title",
+      "content",
+      "creator"
+    ],
+    "title": "NoteDTO",
+    "description": "DTO для представления пользовательских заметок.\n\nAttributes\n----------\ntype : NoteType\n    Тип пользовательской заметки.\ntitle : str\n    Заголовок пользовательской заметки.\ncontent : str\n    Тест пользовательской заметки.\ncreator : CreatorDTO\n    DTO пользователя, создавшего заметку."
+  },
+  "NoteType": {
+    "type": "string",
+    "enum": [
+      "WISHLIST",
+      "DREAM",
+      "GRATITUDE",
+      "MEMORY"
+    ],
+    "title": "NoteType",
+    "description": "Класс-перечисление для представления доступных типов заметок.\n\nОпределяет категории заметок, которые пользователи могут создавать\nдля организации личного контента.\n\nAttributes\n----------\nWISHLIST\n    Заметка типа \"список желаний\".\nDREAM\n    Заметка типа \"мечта\".\nGRATITUDE\n    Заметка типа \"благодарность\".\nMEMORY\n    Заметка типа \"воспоминание\"."
+  },
+  "NotesResponse": {
+    "properties": {
+      "code": {
+        "$ref": "#/components/schemas/APICode",
+        "description": "Статус ответа от сервера в виде API Enum",
+        "default": "SUCCESS",
+        "examples": [
+          "SUCCESS"
+        ]
+      },
+      "detail": {
+        "type": "string",
+        "title": "Detail",
+        "description": "Сообщение о выполненных на сервере действиях",
+        "default": "Success!",
+        "examples": [
+          "Success!"
+        ]
+      },
+      "notes": {
+        "items": {
+          "$ref": "#/components/schemas/NoteDTO"
+        },
+        "type": "array",
+        "title": "Notes",
+        "description": "Список всех заметок, подходящих под фильтры."
+      }
+    },
+    "type": "object",
+    "required": [
+      "notes"
+    ],
+    "title": "NotesResponse",
+    "description": "Модель ответа сервера с вложенным списком заметок.\n\nИспользуется в качестве ответа с сервера на запрос о получении\nзаметок пользователем.\n\nAttributes\n----------\nnotes : list[NoteDTO]\n    Список всех заметок, подходящих под фильтры."
+  },
+  "PartnerDTO": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "title": "Id"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time",
+        "title": "Created At"
+      },
+      "username": {
+        "type": "string",
+        "title": "Username"
+      },
+      "avatar_url": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Avatar Url"
+      },
+      "is_active": {
+        "type": "boolean",
+        "title": "Is Active"
+      }
+    },
+    "type": "object",
+    "required": [
+      "id",
+      "created_at",
+      "username",
+      "avatar_url",
+      "is_active"
+    ],
+    "title": "PartnerDTO",
+    "description": "DTO для представления партнёра пользователя.\n\nNotes\n-----\nНаследуется от `UserDTO`, имеет тот же самый\nнабор атрибутов. Выделен в отдельный класс из\nсоображений семантики."
+  },
+  "PartnerResponse": {
+    "properties": {
+      "code": {
+        "$ref": "#/components/schemas/APICode",
+        "description": "Статус ответа от сервера в виде API Enum",
+        "default": "SUCCESS",
+        "examples": [
+          "SUCCESS"
+        ]
+      },
+      "detail": {
+        "type": "string",
+        "title": "Detail",
+        "description": "Сообщение о выполненных на сервере действиях",
+        "default": "Success!",
+        "examples": [
+          "Success!"
+        ]
+      },
+      "partner": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/PartnerDTO"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "DTO партнёра пользователя, или None если партнёр не найден."
+      }
+    },
+    "type": "object",
+    "required": [
+      "partner"
+    ],
+    "title": "PartnerResponse",
+    "description": "Модель ответа сервера с информацией о партнёре пользователя.\n\nAttributes\n----------\npartner : PartnerDTO | None\n    DTO партнёра пользователя, или None если партнёр не найден."
+  },
+  "PresignedURLDTO": {
+    "properties": {
+      "file_id": {
+        "type": "string",
+        "format": "uuid",
+        "title": "File Id",
+        "description": "UUID загружаемого файла.",
+        "examples": [
+          "ccdc1e34-8772-4537-bdba-5e45c4be5d7c"
+        ]
+      },
+      "presigned_url": {
+        "type": "string",
+        "minLength": 1,
+        "format": "uri",
+        "title": "Presigned Url",
+        "description": "Presigned URL на загрузку или получение файла.",
+        "examples": [
+          "https://amzn-s3-demo-bucket.s3.amazonaws.com"
+        ]
+      }
+    },
+    "type": "object",
+    "required": [
+      "file_id",
+      "presigned_url"
+    ],
+    "title": "PresignedURLDTO",
+    "description": "Модель представления подписанной ссылки.\n\nAttributes\n----------\nfile_id : UUID\n    UUID загружаемого файла.\npresigned_url : str\n    Presigned URL на загрузку или получение файла."
+  },
+  "PresignedURLResponse": {
+    "properties": {
+      "code": {
+        "$ref": "#/components/schemas/APICode",
+        "description": "Статус ответа от сервера в виде API Enum",
+        "default": "SUCCESS",
+        "examples": [
+          "SUCCESS"
+        ]
+      },
+      "detail": {
+        "type": "string",
+        "title": "Detail",
+        "description": "Сообщение о выполненных на сервере действиях",
+        "default": "Success!",
+        "examples": [
+          "Success!"
+        ]
+      },
+      "url": {
+        "$ref": "#/components/schemas/PresignedURLDTO",
+        "description": "Подписанная ссылка вместе с UUID файла."
+      }
+    },
+    "type": "object",
+    "required": [
+      "url"
+    ],
+    "title": "PresignedURLResponse",
+    "description": "Модель ответа сервера с вложенной Presigned URL.\n\nИспользуется в качестве ответа с сервера на запрос на загрузку\nили получение медиа-файла.\n\nAttributes\n----------\nurl : PresignedURLDTO\n    Подписанная ссылка вместе с UUID файла."
+  },
+  "PresignedURLsBatchResponse": {
+    "properties": {
+      "code": {
+        "$ref": "#/components/schemas/APICode",
+        "description": "Статус ответа от сервера в виде API Enum",
+        "default": "SUCCESS",
+        "examples": [
+          "SUCCESS"
+        ]
+      },
+      "detail": {
+        "type": "string",
+        "title": "Detail",
+        "description": "Сообщение о выполненных на сервере действиях",
+        "default": "Success!",
+        "examples": [
+          "Success!"
+        ]
+      },
+      "urls": {
+        "items": {
+          "$ref": "#/components/schemas/PresignedURLDTO"
+        },
+        "type": "array",
+        "title": "Urls",
+        "description": "Подписанные ссылки для каждого файла в пакете."
+      }
+    },
+    "type": "object",
+    "required": [
+      "urls"
+    ],
+    "title": "PresignedURLsBatchResponse",
+    "description": "Модель ответа сервера с вложенными Presigned URL.\n\nИспользуется в качестве ответа с сервера на запрос на загрузку\nили получение пакета медиа-файлов.\n\nAttributes\n----------\nurls : list[PresignedURLDTO]\n    Подписанные ссылки для каждого файла в пакете."
+  },
+  "RegisterRequest": {
+    "properties": {
+      "username": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 3,
+        "pattern": "^[a-zA-Z0-9_-]+$",
+        "title": "Username",
+        "description": "Логин пользователя (3-32 символа, a-z, A-Z, 0-9, _, -)",
+        "examples": [
+          "john_doe",
+          "user123"
+        ]
+      },
+      "password": {
+        "type": "string",
+        "minLength": 12,
+        "title": "Password",
+        "description": "Пароль (минимум 12 символов, с цифрой, спецсимволом, верхним и нижним регистром)",
+        "examples": [
+          "SecureP@ss123!"
+        ]
+      }
+    },
+    "type": "object",
+    "required": [
+      "username",
+      "password"
+    ],
+    "title": "RegisterRequest",
+    "description": "Схема запроса регистрации с валидацией.\n\nAttributes\n----------\nusername : str\n    Логин пользователя (3-32 символа, a-z, A-Z, 0-9, _, -).\npassword : str\n    Пароль пользователя (минимум 12 символов, верхний/нижний регистр,\n    цифра, спецсимвол)."
+  },
+  "StandardResponse": {
+    "properties": {
+      "code": {
+        "$ref": "#/components/schemas/APICode",
+        "description": "Статус ответа от сервера в виде API Enum",
+        "default": "SUCCESS",
+        "examples": [
+          "SUCCESS"
+        ]
+      },
+      "detail": {
+        "type": "string",
+        "title": "Detail",
+        "description": "Сообщение о выполненных на сервере действиях",
+        "default": "Success!",
+        "examples": [
+          "Success!"
+        ]
+      }
+    },
+    "type": "object",
+    "title": "StandardResponse",
+    "description": "Стандартная модель ответа сервера.\n\nИспользуется в качестве стандартной модели ответа с сообщением\nдля любого запроса к этому приложению.\n\nЭто означает, что любой ответ с сервера будет содержать\nсообщение с сервера ``detail`` в теле ответа.\n\nAttributes\n----------\ndetail : str\n    Сообщение с сервера."
+  },
+  "TokensResponse": {
+    "properties": {
+      "code": {
+        "$ref": "#/components/schemas/APICode",
+        "description": "Статус ответа от сервера в виде API Enum",
+        "default": "SUCCESS",
+        "examples": [
+          "SUCCESS"
+        ]
+      },
+      "detail": {
+        "type": "string",
+        "title": "Detail",
+        "description": "Сообщение о выполненных на сервере действиях",
+        "default": "Success!",
+        "examples": [
+          "Success!"
+        ]
+      },
+      "access_token": {
+        "type": "string",
+        "title": "Access Token",
+        "description": "Значение токена доступа",
+        "examples": [
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+        ]
+      },
+      "refresh_token": {
+        "type": "string",
+        "title": "Refresh Token",
+        "description": "Значение токена обновления",
+        "examples": [
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+        ]
+      },
+      "token_type": {
+        "type": "string",
+        "title": "Token Type",
+        "description": "Тип токенов",
+        "default": "bearer",
+        "examples": [
+          "bearer"
+        ]
+      }
+    },
+    "type": "object",
+    "required": [
+      "access_token",
+      "refresh_token"
+    ],
+    "title": "TokensResponse",
+    "description": "Модель ответа сервера с вложенной парой JWT.\n\nИспользуется в качестве ответа с сервера на запрос на авторизацию.\n\nAttributes\n----------\naccess_token : str\n    JSON Web Token, токен доступа.\nrefresh_token : str\n    JSON Web Token, токен обновления.\ntoken_type : str\n    Тип возвращаемого токена."
+  },
+  "UpdateAlbumRequest": {
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title",
+        "description": "Наименование медиа альбома",
+        "default": "Новый альбом",
+        "examples": [
+          "Поездка в Париж 2004"
+        ]
+      },
+      "description": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Description",
+        "description": "Описание медиа альбома",
+        "examples": [
+          "Альбом с романтичными видами Города Любви!"
+        ]
+      },
+      "cover_url": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Cover Url",
+        "description": "Ссылка на обложку медиа альбома",
+        "examples": [
+          "https://camo.githubusercontent.com/78a574a2925825ac33911b5a8bad6176bea158260c4581a72129bfa8d2ce87f3/68747470733a2f2f7777772e6963656769662e636f6d2f77702d636f6e74656e742f75706c6f6164732f323032332f30312f6963656769662d3136322e676966"
+        ]
+      },
+      "is_private": {
+        "type": "boolean",
+        "title": "Is Private",
+        "description": "Видимость альбома (True - личный или False - публичный)",
+        "default": false,
+        "examples": [
+          true,
+          false
+        ]
+      }
+    },
+    "type": "object",
+    "title": "UpdateAlbumRequest",
+    "description": "Схема запроса на редактирование медиа-альбома.\n\nИспользуется в качестве представления данных для обновления\nполей альбома. Наследуется от `CreateAlbumRequest`, т.к. имеет\nте же поля, но отличается семантически.\n\nSee Also\n--------\napp.schemas.v1.requests.albums.CreateAlbumRequest"
+  },
+  "UpdateFileRequest": {
+    "properties": {
+      "content_type": {
+        "type": "string",
+        "title": "Content Type",
+        "description": "MIME-тип отправляемого файла.",
+        "examples": [
+          "image/png"
+        ]
+      },
+      "title": {
+        "type": "string",
+        "title": "Title",
+        "description": "Наименование медиа файла.",
+        "examples": [
+          "яскотятами"
+        ]
+      },
+      "description": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Description",
+        "description": "Описание медиа файла.",
+        "examples": [
+          "Файл смерти: кто прочитал, тот..."
+        ]
+      }
+    },
+    "type": "object",
+    "required": [
+      "content_type",
+      "title",
+      "description"
+    ],
+    "title": "UpdateFileRequest",
+    "description": "Схема запроса на редактирование медиа-файла.\n\nИспользуется в качестве представления данных для обновления\nполей файла. Наследуется от `UploadFileRequest`, т.к. имеет\nте же поля, но отличается семантически.\n\nSee Also\n--------\napp.schemas.v1.requests.files.UploadFileRequest"
+  },
+  "UpdateNoteRequest": {
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title",
+        "description": "Заголовок пользовательской заметки",
+        "default": "Новая заметка",
+        "examples": [
+          "Новый телефон"
+        ]
+      },
+      "content": {
+        "type": "string",
+        "title": "Content",
+        "description": "Содержание пользовательской заметки",
+        "examples": [
+          "iPhone 15 Pro в цвете Natural Titanium"
+        ]
+      }
+    },
+    "type": "object",
+    "required": [
+      "content"
+    ],
+    "title": "UpdateNoteRequest",
+    "description": "Схема запроса на редактирование заметки.\n\nИспользуется в качестве представления данных для обновления\nполей пользовательской заметки.\n\nAttributes\n----------\ntitle : str\n    Заголовок пользовательской заметки.\ncontent : str\n    Содержание пользовательской заметки."
+  },
+  "UploadFileRequest": {
+    "properties": {
+      "content_type": {
+        "type": "string",
+        "title": "Content Type",
+        "description": "MIME-тип отправляемого файла.",
+        "examples": [
+          "image/png"
+        ]
+      },
+      "title": {
+        "type": "string",
+        "title": "Title",
+        "description": "Наименование медиа файла.",
+        "examples": [
+          "яскотятами"
+        ]
+      },
+      "description": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Description",
+        "description": "Описание медиа файла.",
+        "examples": [
+          "Файл смерти: кто прочитал, тот..."
+        ]
+      }
+    },
+    "type": "object",
+    "required": [
+      "content_type",
+      "title",
+      "description"
+    ],
+    "title": "UploadFileRequest",
+    "description": "Схема запроса на получение Presigned URL загрузки файла.\n\nAttributes\n----------\ncontent_type : str\n    MIME-тип отправляемого файла.\ntitle : str\n    Наименование медиа файла.\ndescription : str | None\n    Описание медиа файла."
+  },
+  "UploadFilesBatchRequest": {
+    "properties": {
+      "files_metadata": {
+        "items": {
+          "$ref": "#/components/schemas/UploadFileRequest"
+        },
+        "type": "array",
+        "maxItems": 50,
+        "minItems": 1,
+        "title": "Files Metadata",
+        "description": "Метаданные для каждого файла."
+      }
+    },
+    "type": "object",
+    "required": [
+      "files_metadata"
+    ],
+    "title": "UploadFilesBatchRequest",
+    "description": "Схема запроса на получение Presigned URL загрузки пакета файлов.\n\nAttributes\n----------\nfiles_metadata : list[UploadFileRequest]\n    Метаданные для каждого файла."
+  },
+  "UserDTO": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "title": "Id"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time",
+        "title": "Created At"
+      },
+      "username": {
+        "type": "string",
+        "title": "Username"
+      },
+      "avatar_url": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Avatar Url"
+      },
+      "is_active": {
+        "type": "boolean",
+        "title": "Is Active"
+      }
+    },
+    "type": "object",
+    "required": [
+      "id",
+      "created_at",
+      "username",
+      "avatar_url",
+      "is_active"
+    ],
+    "title": "UserDTO",
+    "description": "DTO для представления пользователя системы.\n\nAttributes\n----------\nusername : str\n    Логин пользователя для входа в систему.\navatar_url : str | None\n    URL аватара пользователя.\nis_active : bool\n    Статус пользователя (True - активный или False - заблокирован)"
+  },
+  "UserResponse": {
+    "properties": {
+      "code": {
+        "$ref": "#/components/schemas/APICode",
+        "description": "Статус ответа от сервера в виде API Enum",
+        "default": "SUCCESS",
+        "examples": [
+          "SUCCESS"
+        ]
+      },
+      "detail": {
+        "type": "string",
+        "title": "Detail",
+        "description": "Сообщение о выполненных на сервере действиях",
+        "default": "Success!",
+        "examples": [
+          "Success!"
+        ]
+      },
+      "user": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/UserDTO"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "DTO запрашиваемого пользователя, или None если пользователя не найден."
+      }
+    },
+    "type": "object",
+    "required": [
+      "user"
+    ],
+    "title": "UserResponse",
+    "description": "Модель ответа сервера с информацией о пользователе.\n\nAttributes\n----------\nuser : UserDTO | None\n    DTO запрашиваемого пользователя, или None если пользователя не найден."
+  },
+  "ValidationErrorResponse": {
+    "description": "Переопределённая модель HTTPValidationError.\n\nЯвляется переопределением модели HTTPValidationError из FastAPI.\nЭто сделано для добавления в эту модель атрибута `code`, чтобы\nсохранить консистентность ответов API.\n\nAttributes\n----------\ncode : int\n    HTTP-код ответа сервера.\ndetail : list[ErrorDetails]\n    Список ошибок валидации.",
+    "properties": {
+      "code": {
+        "$ref": "#/components/schemas/APICode",
+        "default": "VALIDATION_ERROR",
+        "description": "Статус ответа от сервера в виде API Enum",
+        "examples": [
+          "VALIDATION_ERROR"
+        ]
+      },
+      "detail": {
+        "description": "Список ошибок валидации переданных данных.",
+        "items": {
+          "$ref": "#/components/schemas/ErrorDetails"
+        },
+        "title": "Detail",
+        "type": "array"
+      }
+    },
+    "required": [
+      "detail"
+    ],
+    "title": "ValidationErrorResponse",
+    "type": "object"
+  },
+  "ErrorDetails": {
+    "title": "ErrorDetails",
+    "type": "object",
+    "properties": {
+      "loc": {
+        "title": "Location",
+        "type": "array",
+        "items": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ]
+        }
+      },
+      "msg": {
+        "title": "Message",
+        "type": "string"
+      },
+      "type": {
+        "title": "Error Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "loc",
+      "msg",
+      "type"
+    ]
+  }
+}

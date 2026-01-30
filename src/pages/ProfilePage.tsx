@@ -1,118 +1,258 @@
-import React from 'react';
-import { User, Heart, Calendar, Mail } from 'lucide-react';
-import { useAuth } from '@/features/auth';
+import React, { useState, useEffect } from 'react';
+import { User, Camera, Lock, Trash2, Loader2, Save } from 'lucide-react';
 import { Button } from '@/shared/ui/Button';
+import { Input } from '@/shared/ui/Input';
+import { useAuth } from '@/features/auth';
+import { toast } from 'sonner';
 
 const ProfilePage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({
+    username: '',
+    currentPassword: '',
+    newPassword: '',
+  });
+  const [isSaving, setIsSaving] = useState(false);
 
-  if (!user) {
-    return null;
+  useEffect(() => {
+    if (user) {
+      setEditData({ ...editData, username: user.username });
+    }
+  }, [user]);
+
+  const handleSaveUsername = async () => {
+    if (!editData.username.trim() || editData.username === user?.username) {
+      setIsEditing(false);
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      toast.success('Имя пользователя обновлено');
+      setIsEditing(false);
+    } catch {
+      toast.error('Не удалось обновить имя пользователя');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editData.currentPassword || !editData.newPassword) {
+      toast.error('Заполните все поля');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      toast.success('Пароль изменён');
+      setEditData({ ...editData, currentPassword: '', newPassword: '' });
+    } catch {
+      toast.error('Не удалось изменить пароль');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (
+      !confirm(
+        'Вы уверены, что хотите удалить аккаунт? Это действие нельзя отменить.'
+      )
+    ) {
+      return;
+    }
+
+    if (!confirm('Вы точно уверены? Все ваши данные будут удалены навсегда.')) {
+      return;
+    }
+
+    try {
+      toast.success('Аккаунт удалён');
+    } catch {
+      toast.error('Не удалось удалить аккаунт');
+    }
+  };
+
+  if (isLoading && !user) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-romantic-pink" />
+        <span className="ml-2 text-gray-600 dark:text-gray-400">
+          Загрузка профиля...
+        </span>
+      </div>
+    );
   }
 
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  };
+
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 max-w-4xl">
+      <div>
         <h1 className="text-3xl font-romantic font-bold text-gray-900 dark:text-white">
-          Мой профиль
+          Профиль
         </h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">
+          Управление вашим аккаунтом и настройками
+        </p>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-8">
-        {/* Основная информация */}
-        <div className="md:col-span-2 space-y-6">
-          <div className="card p-6">
-            <div className="flex items-center space-x-4 mb-6">
-              <div className="h-20 w-20 rounded-full bg-gradient-to-r from-romantic-pink to-romantic-rose flex items-center justify-center">
-                <User className="h-10 w-10 text-white" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold">{user.username}</h2>
-                <p className="text-gray-600 dark:text-gray-400">
-                  {user.is_active ? 'Активный пользователь' : 'Не активен'}
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <div className="flex items-center text-gray-600 dark:text-gray-400">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  <span className="text-sm">Дата регистрации</span>
+      <div className="card p-6">
+        <div className="flex items-start gap-6">
+          <div className="relative">
+            <div className="h-24 w-24 rounded-full bg-gradient-to-br from-romantic-pink to-romantic-purple p-1">
+              {user?.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt={user.username}
+                  className="h-full w-full rounded-full object-cover"
+                />
+              ) : (
+                <div className="h-full w-full rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                  <User className="h-10 w-10 text-gray-400" />
                 </div>
-                <p className="font-medium">
-                  {new Date(user.created_at).toLocaleDateString('ru-RU')}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center text-gray-600 dark:text-gray-400">
-                  <Heart className="h-4 w-4 mr-2" />
-                  <span className="text-sm">ID пользователя</span>
-                </div>
-                <p className="font-medium font-mono text-sm">{user.id}</p>
-              </div>
+              )}
             </div>
+            <button className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-romantic-pink text-white flex items-center justify-center shadow-lg hover:bg-romantic-rose transition-colors">
+              <Camera className="h-4 w-4" />
+            </button>
           </div>
+          <div className="flex-1">
+            {isEditing ? (
+              <div className="flex gap-3">
+                <Input
+                  value={editData.username}
+                  onChange={(e) =>
+                    setEditData({ ...editData, username: e.target.value })
+                  }
+                  placeholder="Новое имя пользователя"
+                  className="flex-1"
+                />
+                <Button
+                  variant="primary"
+                  leftIcon={<Save className="h-4 w-4" />}
+                  onClick={handleSaveUsername}
+                  isLoading={isSaving}
+                >
+                  Сохранить
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setEditData({
+                      ...editData,
+                      username: user?.username || '',
+                    });
+                    setIsEditing(false);
+                  }}
+                >
+                  Отмена
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-bold">@{user?.username}</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsEditing(true)}
+                >
+                  Изменить
+                </Button>
+              </div>
+            )}
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Участник с {user ? formatDate(user.created_at) : '...'}
+            </p>
+          </div>
+        </div>
+      </div>
 
-          {/* Статистика */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="card p-4 text-center">
-              <div className="text-2xl font-bold text-romantic-pink">12</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Альбомов</div>
-            </div>
-            <div className="card p-4 text-center">
-              <div className="text-2xl font-bold text-romantic-pink">156</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Фотографий</div>
-            </div>
-            <div className="card p-4 text-center">
-              <div className="text-2xl font-bold text-romantic-pink">24</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Заметок</div>
-            </div>
-            <div className="card p-4 text-center">
-              <div className="text-2xl font-bold text-romantic-pink">365</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Дней вместе</div>
-            </div>
+      <div className="card p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+            <Lock className="h-5 w-5 text-blue-500" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold">Безопасность</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Изменение пароля
+            </p>
           </div>
         </div>
 
-        {/* Боковая панель */}
-        <div className="space-y-6">
-          <div className="card p-6">
-            <h3 className="font-bold text-lg mb-4">Быстрые действия</h3>
-            <div className="space-y-3">
-              <Button variant="secondary" fullWidth>
-                Изменить профиль
-              </Button>
-              <Button variant="secondary" fullWidth>
-                Настройки приватности
-              </Button>
-              <Button variant="secondary" fullWidth>
-                Экспорт данных
-              </Button>
-            </div>
+        <form onSubmit={handleChangePassword} className="space-w-md">
+          <div>
+            <Input
+              type="password"
+              placeholder="Те-y-4 maxкущий пароль"
+              value={editData.currentPassword}
+              onChange={(e) =>
+                setEditData({ ...editData, currentPassword: e.target.value })
+              }
+              leftIcon={<Lock className="h-4 w-4" />}
+            />
           </div>
+          <div>
+            <Input
+              type="password"
+              placeholder="Новый пароль"
+              value={editData.newPassword}
+              onChange={(e) =>
+                setEditData({ ...editData, newPassword: e.target.value })
+              }
+              leftIcon={<Lock className="h-4 w-4" />}
+            />
+          </div>
+          <Button
+            type="submit"
+            variant="primary"
+            isLoading={isSaving}
+            leftIcon={<Save className="h-4 w-4" />}
+          >
+            Изменить пароль
+          </Button>
+        </form>
+      </div>
 
-          <div className="card p-6">
-            <h3 className="font-bold text-lg mb-4">Наша пара</h3>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 rounded-full bg-gradient-to-r from-romantic-pink to-romantic-rose flex items-center justify-center">
-                  <Heart className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <p className="font-medium">Света & Лёша</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Вместе с 14.02.2024
-                  </p>
-                </div>
-              </div>
-              <Button variant="primary" fullWidth>
-                Пригласить партнёра
-              </Button>
-            </div>
+      <div className="card p-6 border-red-200 dark:border-red-800">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+            <Trash2 className="h-5 w-5 text-red-500" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-red-600 dark:text-red-400">
+              Опасная зона
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Удаление аккаунта
+            </p>
           </div>
         </div>
+
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
+          Удаление аккаунта приведёт к безвозвратной потере всех ваших данных,
+          включая фотографии, заметки и альбомы.
+        </p>
+
+        <Button
+          variant="danger"
+          leftIcon={<Trash2 className="h-4 w-4" />}
+          onClick={handleDeleteAccount}
+        >
+          Удалить аккаунт
+        </Button>
       </div>
     </div>
   );

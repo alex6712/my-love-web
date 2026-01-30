@@ -1,9 +1,19 @@
-import React, { useState } from 'react';
-import { Plus, Search, Filter, Edit, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Search, Grid, List, Loader2 } from 'lucide-react';
 import { Button } from '@/shared/ui/Button';
 import { Input } from '@/shared/ui/Input';
+import { NoteList } from '@/shared/ui/NoteCard/NoteList';
+import { NoteForm } from '@/shared/ui/NoteForm';
+import { useNotesStore, useFilteredNotes } from '@/features/notes/model/store';
+import {
+  NoteDTO,
+  NoteType,
+  CreateNoteRequest,
+  UpdateNoteRequest,
+} from '@/services/types';
+import { toast } from 'sonner';
 
-const NOTE_TYPES = {
+const NOTE_TYPE_CONFIG: Record<string, { label: string; color: string }> = {
   WISHLIST: {
     label: 'Вишлист',
     color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
@@ -24,51 +34,71 @@ const NOTE_TYPES = {
   },
 };
 
-const MOCK_NOTES = [
-  {
-    id: '1',
-    title: 'Хочу новый фотоаппарат',
-    content: 'Canon EOS R6 Mark II для съёмки наших путешествий',
-    type: 'WISHLIST' as keyof typeof NOTE_TYPES,
-    created_at: '2024-01-15',
-  },
-  {
-    id: '2',
-    title: 'Путешествие в Японию',
-    content: 'Поехать весной на сакуру и посмотреть Токио, Киото, Осаку',
-    type: 'DREAM' as keyof typeof NOTE_TYPES,
-    created_at: '2024-01-10',
-  },
-  {
-    id: '3',
-    title: 'Спасибо за поддержку',
-    content:
-      'Благодарю за то, что всегда веришь в меня и поддерживаешь в трудные моменты',
-    type: 'GRATITUDE' as keyof typeof NOTE_TYPES,
-    created_at: '2024-01-05',
-  },
-  {
-    id: '4',
-    title: 'Наша первая встреча',
-    content:
-      'Помню, как мы познакомились в том кафе на Арбате. Шёл дождь, а в душе расцветала весна.',
-    type: 'MEMORY' as keyof typeof NOTE_TYPES,
-    created_at: '2023-12-20',
-  },
-];
-
 const NotesPage: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedType, setSelectedType] = useState<string>('ALL');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const {
+    isLoading,
+    error,
+    selectedType,
+    searchQuery,
+    setSelectedType,
+    setSearchQuery,
+    fetchNotes,
+    createNote,
+    editNote,
+    removeNote,
+  } = useNotesStore();
 
-  const filteredNotes = MOCK_NOTES.filter((note) => {
-    const matchesSearch =
-      note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      note.content.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = selectedType === 'ALL' || note.type === selectedType;
-    return matchesSearch && matchesType;
-  });
+  const filteredNotes = useFilteredNotes();
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [showForm, setShowForm] = useState(false);
+  const [editingNote, setEditingNote] = useState<NoteDTO | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetchNotes();
+  }, [fetchNotes]);
+
+  const handleCreateNote = async (
+    data: CreateNoteRequest | UpdateNoteRequest
+  ) => {
+    setIsSubmitting(true);
+    try {
+      if (editingNote) {
+        await editNote(editingNote.id, data as UpdateNoteRequest);
+        toast.success('Заметка обновлена');
+      } else {
+        await createNote(data as CreateNoteRequest);
+        toast.success('Заметка создана');
+      }
+      setShowForm(false);
+      setEditingNote(null);
+    } catch {
+      toast.error(error || 'Произошла ошибка');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteNote = async (note: NoteDTO) => {
+    if (confirm('Вы уверены, что хотите удалить эту заметку?')) {
+      try {
+        await removeNote(note.id);
+        toast.success('Заметка удалена');
+      } catch {
+        toast.error('Не удалось удалить заметку');
+      }
+    }
+  };
+
+  const handleEditNote = (note: NoteDTO) => {
+    setEditingNote(note);
+    setShowForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setEditingNote(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -81,12 +111,15 @@ const NotesPage: React.FC = () => {
             Ваши мысли, мечты и благодарности
           </p>
         </div>
-        <Button variant="primary" leftIcon={<Plus className="h-4 w-4" />}>
+        <Button
+          variant="primary"
+          leftIcon={<Plus className="h-4 w-4" />}
+          onClick={() => setShowForm(true)}
+        >
           Новая заметка
         </Button>
       </div>
 
-      {/* Панель фильтров */}
       <div className="card p-4">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
@@ -105,73 +138,54 @@ const NotesPage: React.FC = () => {
             >
               Все
             </Button>
-            {Object.entries(NOTE_TYPES).map(([key, value]) => (
+            {Object.entries(NOTE_TYPE_CONFIG).map(([key, value]) => (
               <Button
                 key={key}
                 variant={selectedType === key ? 'primary' : 'secondary'}
                 size="sm"
-                onClick={() => setSelectedType(key)}
+                onClick={() => setSelectedType(key as NoteType)}
               >
                 {value.label}
               </Button>
             ))}
           </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant={viewMode === 'grid' ? 'primary' : 'secondary'}
+              size="sm"
+              onClick={() => setViewMode('grid')}
+            >
+              <Grid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'primary' : 'secondary'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Список заметок */}
-      {filteredNotes.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="h-16 w-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
-            <Search className="h-8 w-8 text-gray-400" />
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            Заметки не найдены
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            Попробуйте изменить параметры поиска или создайте новую заметку
-          </p>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-romantic-pink" />
+          <span className="ml-2 text-gray-600 dark:text-gray-400">
+            Загрузка...
+          </span>
         </div>
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredNotes.map((note) => (
-            <div
-              key={note.id}
-              className="card p-6 hover:shadow-lg transition-shadow"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-medium ${NOTE_TYPES[note.type].color}`}
-                >
-                  {NOTE_TYPES[note.type].label}
-                </span>
-                <div className="flex space-x-2">
-                  <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
-                    <Edit className="h-4 w-4 text-gray-500" />
-                  </button>
-                  <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </button>
-                </div>
-              </div>
-
-              <h3 className="font-bold text-lg mb-2 line-clamp-1">
-                {note.title}
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-3">
-                {note.content}
-              </p>
-
-              <div className="flex items-center justify-between text-sm text-gray-500">
-                <span>
-                  {new Date(note.created_at).toLocaleDateString('ru-RU')}
-                </span>
-              </div>
-            </div>
-          ))}
-
-          {/* Кнопка добавления новой заметки */}
-          <button className="card border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-romantic-pink hover:bg-romantic-pink/5 transition-colors flex flex-col items-center justify-center p-8">
+          <NoteList
+            notes={filteredNotes}
+            onEdit={handleEditNote}
+            onDelete={handleDeleteNote}
+          />
+          <button
+            onClick={() => setShowForm(true)}
+            className="card border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-romantic-pink hover:bg-romantic-pink/5 transition-colors flex flex-col items-center justify-center p-8"
+          >
             <div className="h-12 w-12 rounded-full bg-romantic-pink/10 flex items-center justify-center mb-4">
               <Plus className="h-6 w-6 text-romantic-pink" />
             </div>
@@ -190,9 +204,9 @@ const NotesPage: React.FC = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-3 mb-2">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${NOTE_TYPES[note.type].color}`}
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${NOTE_TYPE_CONFIG[note.type].color}`}
                     >
-                      {NOTE_TYPES[note.type].label}
+                      {NOTE_TYPE_CONFIG[note.type].label}
                     </span>
                     <h3 className="font-bold text-lg truncate">{note.title}</h3>
                   </div>
@@ -205,11 +219,17 @@ const NotesPage: React.FC = () => {
                     {new Date(note.created_at).toLocaleDateString('ru-RU')}
                   </span>
                   <div className="flex space-x-2">
-                    <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
-                      <Edit className="h-4 w-4 text-gray-500" />
+                    <button
+                      onClick={() => handleEditNote(note)}
+                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+                    >
+                      <Grid className="h-4 w-4 text-gray-500" />
                     </button>
-                    <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
-                      <Trash2 className="h-4 w-4 text-red-500" />
+                    <button
+                      onClick={() => handleDeleteNote(note)}
+                      className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                    >
+                      <List className="h-4 w-4 text-red-500" />
                     </button>
                   </div>
                 </div>
@@ -217,6 +237,15 @@ const NotesPage: React.FC = () => {
             </div>
           ))}
         </div>
+      )}
+
+      {showForm && (
+        <NoteForm
+          initialData={editingNote || undefined}
+          onSubmit={handleCreateNote}
+          onClose={handleCloseForm}
+          isLoading={isSubmitting}
+        />
       )}
     </div>
   );

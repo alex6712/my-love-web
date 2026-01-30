@@ -8,6 +8,7 @@ import { ProtectedRoute } from './ProtectedRoute';
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
 const RegisterPage = lazy(() => import('@/pages/RegisterPage'));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
+const CouplesPage = lazy(() => import('@/pages/CouplesPage'));
 const AlbumsPage = lazy(() => import('@/pages/AlbumsPage'));
 const AlbumDetailPage = lazy(() => import('@/pages/AlbumDetailPage'));
 const NotesPage = lazy(() => import('@/pages/NotesPage'));
@@ -27,6 +28,7 @@ export const AppRouter = () => {
           <Route element={<AppLayout />}>
             <Route path="/" element={<Navigate to="/albums" replace />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/couples" element={<CouplesPage />} />
             <Route path="/albums" element={<AlbumsPage />} />
             <Route path="/albums/:id" element={<AlbumDetailPage />} />
             <Route path="/notes" element={<NotesPage />} />

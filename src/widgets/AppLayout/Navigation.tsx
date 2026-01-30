@@ -17,6 +17,7 @@ import { useState } from 'react';
 
 const navigation = [
   { name: 'Главная', href: '/albums', icon: Home },
+  { name: 'Наша любовь', href: '/couples', icon: Heart },
   { name: 'Альбомы', href: '/albums', icon: Image },
   { name: 'Заметки', href: '/notes', icon: BookOpen },
   { name: 'Профиль', href: '/profile', icon: User },
