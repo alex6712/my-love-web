@@ -22,12 +22,38 @@ export interface AlbumsResponse {
   albums: AlbumDTO[];
 }
 
+export interface AlbumsWithTotal {
+  albums: AlbumDTO[];
+  total: number;
+}
+
 async function getAuthHeaders(): Promise<HeadersInit> {
   const token = localStorage.getItem("access_token");
   return {
     "Content-Type": "application/json",
     Authorization: `Bearer ${token}`,
   };
+}
+
+export async function getAlbums(
+  offset: number = 0,
+  limit: number = 12
+): Promise<AlbumsWithTotal> {
+  const response = await fetch(
+    `${API_URL}/v1/media/albums?offset=${offset}&limit=${limit}`,
+    {
+      method: "GET",
+      headers: await getAuthHeaders(),
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to get albums");
+  }
+
+  const data: AlbumsResponse = await response.json();
+  return { albums: data.albums, total: data.albums.length };
 }
 
 export async function searchAlbums(

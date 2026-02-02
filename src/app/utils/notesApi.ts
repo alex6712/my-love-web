@@ -32,6 +32,11 @@ export interface NotesResponse {
   notes: NoteDTO[];
 }
 
+export interface NotesWithTotal {
+  notes: NoteDTO[];
+  total: number;
+}
+
 async function getAuthHeaders(): Promise<HeadersInit> {
   const token = localStorage.getItem("access_token");
   return {
@@ -41,16 +46,19 @@ async function getAuthHeaders(): Promise<HeadersInit> {
 }
 
 export async function getNotes(
+  type?: NoteType | null,
   offset: number = 0,
-  limit: number = 50
-): Promise<NoteDTO[]> {
-  const response = await fetch(
-    `${API_URL}/v1/notes?offset=${offset}&limit=${limit}`,
-    {
-      method: "GET",
-      headers: await getAuthHeaders(),
-    }
-  );
+  limit: number = 10
+): Promise<NotesWithTotal> {
+  let url = `${API_URL}/v1/notes?offset=${offset}&limit=${limit}`;
+  if (type) {
+    url += `&t=${type}`;
+  }
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: await getAuthHeaders(),
+  });
 
   if (!response.ok) {
     const error = await response.json();
@@ -58,7 +66,7 @@ export async function getNotes(
   }
 
   const data: NotesResponse = await response.json();
-  return data.notes;
+  return { notes: data.notes, total: data.notes.length };
 }
 
 export async function createNote(

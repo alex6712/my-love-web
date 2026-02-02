@@ -76,6 +76,7 @@ interface AlbumWithItemsDTO {
   is_private: boolean;
   creator: CreatorDTO;
   items: FileDTO[];
+  total: number;
 }
 
 export default function AlbumDetail() {
@@ -88,6 +89,9 @@ export default function AlbumDetail() {
 
   const [album, setAlbum] = useState<AlbumWithItemsDTO | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
   const [selectedFile, setSelectedFile] = useState<FileDTO | null>(null);
   const [fileUrls, setFileUrls] = useState<Record<string, string>>({});
@@ -96,44 +100,88 @@ export default function AlbumDetail() {
   const [detachConfirmOpen, setDetachConfirmOpen] = useState(false);
   const [fileToDetach, setFileToDetach] = useState<FileDTO | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const albumRef = useRef<AlbumWithItemsDTO | null>(null);
+  const fileUrlsRef = useRef<Record<string, string>>({});
+  const fetchAlbumRef = useRef<((pageNum?: number, append?: boolean) => Promise<void>) | null>(null);
 
-  const fetchAlbum = useCallback(async () => {
+  const limit = 20;
+
+  const fetchAlbumFn = useCallback(async (pageNum: number = 0, append: boolean = false) => {
     if (!albumId) return;
 
+    if (pageNum === 0) {
+      setIsLoading(true);
+    } else {
+      setIsLoadingMore(true);
+    }
+
     try {
-      const response = await authenticatedFetch(`${API_URL}/v1/media/albums/${albumId}`);
+      const response = await authenticatedFetch(`${API_URL}/v1/media/albums/${albumId}?offset=${pageNum * limit}&limit=${limit}`);
 
       if (!response.ok) {
         throw new Error('Album not found');
       }
 
       const data = await response.json();
-      setAlbum(data.album);
+      const currentAlbum = albumRef.current;
+
+      if (append && currentAlbum) {
+        const newItems = [...currentAlbum.items, ...data.album.items];
+        const updatedAlbum = { ...data.album, items: newItems, total: data.album.total };
+        setAlbum(updatedAlbum);
+        albumRef.current = updatedAlbum;
+      } else {
+        setAlbum(data.album);
+        albumRef.current = data.album;
+      }
 
       const urls: Record<string, string> = {};
-      for (const item of data.album.items || []) {
+      const itemsToFetch = append && currentAlbum ? [...currentAlbum.items, ...data.album.items] : data.album.items;
+      const currentFileUrls = fileUrlsRef.current;
+
+      for (const item of itemsToFetch) {
         if (item.content_type.startsWith('image/') || item.content_type.startsWith('video/')) {
-          try {
-            const presignedUrl = await getDownloadPresignedUrl(item.id);
-            urls[item.id] = presignedUrl;
-          } catch (error) {
-            console.error(`Failed to get URL for file ${item.id}:`, error);
+          if (!currentFileUrls[item.id]) {
+            try {
+              const presignedUrl = await getDownloadPresignedUrl(item.id);
+              urls[item.id] = presignedUrl;
+            } catch (error) {
+              console.error(`Failed to get URL for file ${item.id}:`, error);
+            }
           }
         }
       }
-      setFileUrls(urls);
+
+      if (Object.keys(urls).length > 0) {
+        fileUrlsRef.current = { ...currentFileUrls, ...urls };
+        setFileUrls(fileUrlsRef.current);
+      }
+
+      setHasMore(data.album.items.length >= limit);
+      setPage(pageNum);
     } catch (error) {
       console.error('Error fetching album:', error);
       toast.error('Не удалось загрузить альбом');
       navigate('/media');
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
     }
-  }, [albumId, navigate, authenticatedFetch]);
+  }, [albumId, navigate, authenticatedFetch, limit]);
+
+  const loadMore = () => {
+    fetchAlbumFn(page + 1, true);
+  };
 
   useEffect(() => {
-    fetchAlbum();
-  }, [fetchAlbum]);
+    fetchAlbumRef.current = fetchAlbumFn;
+  }, [fetchAlbumFn]);
+
+  useEffect(() => {
+    if (fetchAlbumRef.current) {
+      fetchAlbumRef.current();
+    }
+  }, [albumId]);
 
   const handleDeleteAlbum = async () => {
     if (!albumId) return;
@@ -169,7 +217,7 @@ export default function AlbumDetail() {
         });
 
         toast.success('Файлы добавлены в альбом');
-        fetchAlbum();
+        fetchAlbumFn();
       }
     } catch (error) {
       console.error('Error uploading files:', error);
@@ -207,7 +255,7 @@ export default function AlbumDetail() {
       toast.success('Файл откреплён от альбома');
       setFileToDetach(null);
       setDetachConfirmOpen(false);
-      fetchAlbum();
+      fetchAlbumFn();
     } catch (error) {
       console.error('Error detaching file:', error);
       toast.error('Не удалось открепить файл');
@@ -380,7 +428,7 @@ export default function AlbumDetail() {
 
       <div className="mb-4">
         <h2 className="text-xl font-semibold mb-4">
-          Файлы ({album.items.length})
+          Файлы ({album.total})
         </h2>
 
         {album.items.length === 0 ? (
@@ -398,45 +446,66 @@ export default function AlbumDetail() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {album.items.map((file) => (
-              <Card
-                key={file.id}
-                className="group cursor-pointer hover:shadow-lg transition-shadow relative"
-                onClick={() => setSelectedFile(file)}
-              >
-                <div className="aspect-square bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center">
-                  {file.content_type.startsWith('image/') ? (
-                    <img
-                      src={fileUrls[file.id] || ''}
-                      alt={file.title}
-                      className="w-full h-full object-cover rounded-t-lg"
-                    />
-                  ) : file.content_type.startsWith('video/') ? (
-                    <Video className="w-16 h-16 text-gray-400" />
-                  ) : (
-                    <FileImage className="w-16 h-16 text-gray-400" />
-                  )}
-                </div>
-                <CardContent className="p-3">
-                  <p className="font-medium truncate">{file.title}</p>
-                  <p className="text-xs text-gray-500">
-                    {new Date(file.created_at).toLocaleDateString()}
-                  </p>
-                </CardContent>
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {album.items.map((file) => (
+                <Card
+                  key={file.id}
+                  className="group cursor-pointer hover:shadow-lg transition-shadow relative"
+                  onClick={() => setSelectedFile(file)}
+                >
+                  <div className="aspect-square bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center">
+                    {file.content_type.startsWith('image/') ? (
+                      <img
+                        src={fileUrls[file.id] || ''}
+                        alt={file.title}
+                        className="w-full h-full object-cover rounded-t-lg"
+                      />
+                    ) : file.content_type.startsWith('video/') ? (
+                      <Video className="w-16 h-16 text-gray-400" />
+                    ) : (
+                      <FileImage className="w-16 h-16 text-gray-400" />
+                    )}
+                  </div>
+                  <CardContent className="p-3">
+                    <p className="font-medium truncate">{file.title}</p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(file.created_at).toLocaleDateString()}
+                    </p>
+                  </CardContent>
 
-                {isOwner && (
-                  <button
-                    onClick={(e) => openDetachDialog(file, e)}
-                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white rounded-full p-1.5"
-                    title="Открепить от альбома"
-                  >
-                    <Link2Off className="w-3.5 h-3.5 text-gray-600" />
-                  </button>
-                )}
-              </Card>
-            ))}
-          </div>
+                  {isOwner && (
+                    <button
+                      onClick={(e) => openDetachDialog(file, e)}
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white rounded-full p-1.5"
+                      title="Открепить от альбома"
+                    >
+                      <Link2Off className="w-3.5 h-3.5 text-gray-600" />
+                    </button>
+                  )}
+                </Card>
+              ))}
+            </div>
+
+            {hasMore && (
+              <div className="mt-6 text-center">
+                <Button
+                  variant="outline"
+                  onClick={loadMore}
+                  disabled={isLoadingMore}
+                >
+                  {isLoadingMore ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Загрузка...
+                    </>
+                  ) : (
+                    'Показать ещё'
+                  )}
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
 

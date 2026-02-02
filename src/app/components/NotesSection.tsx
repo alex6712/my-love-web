@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Gift, MapPin, Heart, Star, Sparkles, Trash2 } from 'lucide-react';
+import { Plus, Gift, MapPin, Heart, Star, Sparkles, Trash2, Loader2, Layers } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -23,37 +23,66 @@ const NOTE_TYPES: { id: NoteType; label: string; icon: typeof Gift; color: strin
   { id: 'MEMORY', label: 'Воспоминания', icon: Star, color: 'bg-yellow-100 text-yellow-700' },
 ];
 
-const FRONTEND_NOTE_TYPES: Record<NoteType, 'wishlist' | 'dream' | 'gratitude' | 'memory'> = {
-  WISHLIST: 'wishlist',
-  DREAM: 'dream',
-  GRATITUDE: 'gratitude',
-  MEMORY: 'memory',
+const ALL_TYPE = { id: 'ALL' as const, label: 'Все', icon: Layers, color: 'bg-gray-100 text-gray-700' };
+
+const NOTE_TYPE_COLORS: Record<NoteType, { color: string; icon: typeof Gift; label: string }> = {
+  WISHLIST: { color: 'bg-pink-100 text-pink-700', icon: Gift, label: 'Вишлисты' },
+  DREAM: { color: 'bg-purple-100 text-purple-700', icon: MapPin, label: 'Мечты' },
+  GRATITUDE: { color: 'bg-red-100 text-red-700', icon: Heart, label: 'Благодарности' },
+  MEMORY: { color: 'bg-yellow-100 text-yellow-700', icon: Star, label: 'Воспоминания' },
 };
+
+type ActiveType = NoteType | 'ALL';
 
 export default function NotesSection() {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [activeType, setActiveType] = useState<NoteType>('WISHLIST');
+  const [activeType, setActiveType] = useState<ActiveType>('WISHLIST');
   const [notes, setNotes] = useState<NoteDTO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
   const [newNote, setNewNote] = useState({
     title: '',
     content: '',
   });
 
-  useEffect(() => {
-    loadNotes();
-  }, []);
+  const limit = 12;
 
-  const loadNotes = async () => {
-    try {
+  useEffect(() => {
+    loadNotes(0);
+  }, [activeType]);
+
+  const loadNotes = async (pageNum: number, append: boolean = false) => {
+    const typeParam = activeType === 'ALL' ? undefined : activeType;
+
+    if (pageNum === 0) {
       setIsLoading(true);
-      const data = await getNotes();
-      setNotes(data);
+    } else {
+      setIsLoadingMore(true);
+    }
+
+    try {
+      const data = await getNotes(typeParam, pageNum * limit, limit);
+
+      if (append) {
+        setNotes((prev) => [...prev, ...data.notes]);
+      } else {
+        setNotes(data.notes);
+      }
+
+      setHasMore(data.notes.length >= limit);
+      setPage(pageNum);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Ошибка загрузки заметок');
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
     }
+  };
+
+  const loadMore = () => {
+    loadNotes(page + 1, true);
   };
 
   const handleCreateNote = async (e: React.FormEvent) => {
@@ -62,12 +91,12 @@ export default function NotesSection() {
       await createNote({
         title: newNote.title || undefined,
         content: newNote.content,
-        type: activeType,
+        type: activeType === 'ALL' ? 'WISHLIST' : activeType,
       });
       toast.success('Заметка создана!');
       setNewNote({ title: '', content: '' });
       setDialogOpen(false);
-      loadNotes();
+      loadNotes(0);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Ошибка создания заметки');
     }
@@ -78,16 +107,14 @@ export default function NotesSection() {
     try {
       await deleteNote(noteId);
       toast.success('Заметка удалена');
-      loadNotes();
+      loadNotes(0);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Ошибка удаления заметки');
     }
   };
 
-  const filteredNotes = notes.filter((note) => note.type === activeType);
-
   const getNoteTypeInfo = (type: NoteType) => {
-    return NOTE_TYPES.find((t) => t.id === type) || NOTE_TYPES[0];
+    return NOTE_TYPE_COLORS[type];
   };
 
   return (
@@ -107,7 +134,7 @@ export default function NotesSection() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Создать заметку</DialogTitle>
-              <DialogDescription>Добавьте новую заметку типа "{getNoteTypeInfo(activeType).label}"</DialogDescription>
+              <DialogDescription>Добавьте новую заметку</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleCreateNote} className="space-y-4">
               <div className="space-y-2">
@@ -136,8 +163,8 @@ export default function NotesSection() {
         </Dialog>
       </div>
 
-      <Tabs value={activeType} onValueChange={(value) => setActiveType(value as NoteType)}>
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mb-6">
+      <Tabs value={activeType} onValueChange={(value) => setActiveType(value as ActiveType)}>
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mb-6">
           {NOTE_TYPES.map((type) => {
             const Icon = type.icon;
             return (
@@ -147,11 +174,15 @@ export default function NotesSection() {
               </TabsTrigger>
             );
           })}
+          <TabsTrigger value="ALL" className="gap-2">
+            <Layers className="w-4 h-4" />
+            <span className="hidden sm:inline">Все</span>
+          </TabsTrigger>
         </TabsList>
 
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <Card key={i} className="animate-pulse">
                 <CardHeader>
                   <div className="h-4 bg-gray-200 rounded w-20 mb-2" />
@@ -164,60 +195,77 @@ export default function NotesSection() {
               </Card>
             ))}
           </div>
-        ) : NOTE_TYPES.map((type) => {
-          const Icon = type.icon;
-          const typeNotes = notes.filter((n) => n.type === type.id);
-          return (
-            <TabsContent key={type.id} value={type.id}>
-              {typeNotes.length === 0 ? (
-                <Card>
-                  <CardContent className="py-16 text-center">
-                    <Icon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg mb-2">Нет заметок типа "{type.label}"</h3>
-                    <p className="text-gray-600 mb-4">Создайте первую заметку</p>
-                    <Button onClick={() => setDialogOpen(true)} className="bg-red-500 hover:bg-red-600">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Создать
-                    </Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {typeNotes.map((note) => (
-                    <Card key={note.id} className="hover:shadow-lg transition-shadow cursor-pointer group relative">
-                      <CardHeader>
-                        <div className="flex items-start justify-between mb-2">
-                          <Badge className={type.color}>
-                            <Icon className="w-3 h-3 mr-1" />
-                            {type.label}
-                          </Badge>
-                          <div className="flex items-center gap-1">
-                            <Sparkles className="w-4 h-4 text-gray-400 group-hover:text-yellow-500 transition-colors" />
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={(e) => handleDeleteNote(note.id, e)}
-                            >
-                              <Trash2 className="w-3 h-3 text-red-500" />
-                            </Button>
-                          </div>
+        ) : notes.length === 0 ? (
+          <Card>
+            <CardContent className="py-16 text-center">
+              <Layers className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg mb-2">Нет заметок</h3>
+              <p className="text-gray-600 mb-4">Создайте первую заметку</p>
+              <Button onClick={() => setDialogOpen(true)} className="bg-red-500 hover:bg-red-600">
+                <Plus className="w-4 h-4 mr-2" />
+                Создать
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {notes.map((note) => {
+                const typeInfo = getNoteTypeInfo(note.type);
+                const TypeIcon = typeInfo.icon;
+                return (
+                  <Card key={note.id} className="hover:shadow-lg transition-shadow cursor-pointer group relative">
+                    <CardHeader>
+                      <div className="flex items-start justify-between mb-2">
+                        <Badge className={typeInfo.color}>
+                          <TypeIcon className="w-3 h-3 mr-1" />
+                          {typeInfo.label}
+                        </Badge>
+                        <div className="flex items-center gap-1">
+                          <Sparkles className="w-4 h-4 text-gray-400 group-hover:text-yellow-500 transition-colors" />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => handleDeleteNote(note.id, e)}
+                          >
+                            <Trash2 className="w-3 h-3 text-red-500" />
+                          </Button>
                         </div>
-                        <CardTitle className="line-clamp-2">{note.title || 'Без названия'}</CardTitle>
-                        <CardDescription>
-                          {new Date(note.created_at).toLocaleDateString('ru-RU')}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-gray-700 line-clamp-3">{note.content}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-          );
-        })}
+                      </div>
+                      <CardTitle className="line-clamp-2">{note.title || 'Без названия'}</CardTitle>
+                      <CardDescription>
+                        {new Date(note.created_at).toLocaleDateString('ru-RU')}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-gray-700 line-clamp-3">{note.content}</p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {hasMore && (
+              <div className="mt-6 text-center">
+                <Button
+                  variant="outline"
+                  onClick={loadMore}
+                  disabled={isLoadingMore}
+                >
+                  {isLoadingMore ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Загрузка...
+                    </>
+                  ) : (
+                    'Показать ещё'
+                  )}
+                </Button>
+              </div>
+            )}
+          </>
+        )}
       </Tabs>
     </div>
   );

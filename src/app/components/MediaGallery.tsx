@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, FolderHeart, Image as ImageIcon, Calendar, MoreVertical, Trash2, Edit2, ExternalLink, Search, X } from 'lucide-react';
+import { Plus, FolderHeart, Image as ImageIcon, Calendar, MoreVertical, Trash2, Edit2, ExternalLink, Search, X, Loader2 } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { API_URL } from '../constants/api';
 import { Button } from './ui/button';
@@ -28,14 +28,16 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { toast } from 'sonner';
-import { searchAlbums, AlbumDTO } from '../utils/albumsApi';
+import { searchAlbums, getAlbums, AlbumDTO } from '../utils/albumsApi';
 
 export default function MediaGallery() {
   const navigate = useNavigate();
   const { authenticatedFetch } = useAuth();
   const [albums, setAlbums] = useState<AlbumDTO[]>([]);
-  const [filteredAlbums, setFilteredAlbums] = useState<AlbumDTO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -45,52 +47,59 @@ export default function MediaGallery() {
     is_private: false,
   });
 
+  const limit = 12;
+
   useEffect(() => {
-    fetchAlbums();
+    loadAlbums(0);
   }, []);
 
   useEffect(() => {
     if (searchQuery.trim()) {
       handleSearch();
-    } else {
-      setFilteredAlbums(albums);
     }
-  }, [searchQuery, albums]);
+  }, [searchQuery]);
 
-  const fetchAlbums = async () => {
+  const loadAlbums = async (pageNum: number, append: boolean = false) => {
+    if (pageNum === 0) {
+      setIsLoading(true);
+    } else {
+      setIsLoadingMore(true);
+    }
+
     try {
-      const response = await authenticatedFetch(`${API_URL}/v1/media/albums`);
+      const data = await getAlbums(pageNum * limit, limit);
 
-      if (response.ok) {
-        const data = await response.json();
-        const fetchedAlbums = Array.isArray(data.albums) ? data.albums : [];
-        setAlbums(fetchedAlbums);
-        setFilteredAlbums(fetchedAlbums);
+      if (append) {
+        setAlbums((prev) => [...prev, ...data.albums]);
       } else {
-        setAlbums([]);
-        setFilteredAlbums([]);
-        toast.error('Не удалось загрузить альбомы');
+        setAlbums(data.albums);
       }
+
+      setHasMore(data.albums.length >= limit);
+      setPage(pageNum);
     } catch (error) {
       console.error('Error fetching albums:', error);
-      setAlbums([]);
-      setFilteredAlbums([]);
       toast.error('Ошибка при загрузке альбомов');
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
     }
+  };
+
+  const loadMore = () => {
+    loadAlbums(page + 1, true);
   };
 
   const handleSearch = async () => {
     if (!searchQuery.trim() || searchQuery.length < 2) {
-      setFilteredAlbums(albums);
       return;
     }
 
     setIsSearching(true);
     try {
-      const results = await searchAlbums(searchQuery, 0.15, 20);
-      setFilteredAlbums(results);
+      const results = await searchAlbums(searchQuery, 0.15, 50);
+      setAlbums(results);
+      setHasMore(false);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Ошибка поиска');
     } finally {
@@ -100,12 +109,13 @@ export default function MediaGallery() {
 
   const clearSearch = () => {
     setSearchQuery('');
-    setFilteredAlbums(albums);
+    loadAlbums(0);
   };
 
   const createAlbum = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const API_URL = (await import('../constants/api')).API_URL;
       const response = await authenticatedFetch(`${API_URL}/v1/media/albums`, {
         method: 'POST',
         headers: {
@@ -122,7 +132,7 @@ export default function MediaGallery() {
         toast.success('Альбом создан! 📸');
         setNewAlbum({ title: '', description: '', is_private: false });
         setDialogOpen(false);
-        fetchAlbums();
+        loadAlbums(0);
       } else {
         toast.error('Не удалось создать альбом');
       }
@@ -134,12 +144,13 @@ export default function MediaGallery() {
 
   const deleteAlbum = async (albumId: string) => {
     try {
+      const API_URL = (await import('../constants/api')).API_URL;
       await authenticatedFetch(`${API_URL}/v1/media/albums/${albumId}`, {
         method: 'DELETE',
       });
 
       toast.success('Альбом удалён');
-      fetchAlbums();
+      loadAlbums(0);
     } catch (error) {
       console.error('Error deleting album:', error);
       toast.error('Не удалось удалить альбом');
@@ -240,7 +251,7 @@ export default function MediaGallery() {
             <p className="text-gray-600">Поиск...</p>
           </div>
         </div>
-      ) : filteredAlbums.length === 0 ? (
+      ) : albums.length === 0 ? (
         <Card>
           <CardContent className="py-16 text-center">
             <FolderHeart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
@@ -261,100 +272,121 @@ export default function MediaGallery() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredAlbums.map((album) => (
-            <Card
-              key={album.id}
-              className="group hover:shadow-lg transition-shadow"
-            >
-              <CardHeader className="p-0 relative">
-                <div
-                  className="aspect-video bg-gradient-to-br from-pink-200 to-purple-200 rounded-t-lg flex items-center justify-center group-hover:from-pink-300 group-hover:to-purple-300 transition-colors cursor-pointer"
-                  onClick={() => navigate(`/media/album/${album.id}`)}
-                >
-                  {album.cover_url ? (
-                    <img
-                      src={album.cover_url}
-                      alt={album.title}
-                      className="w-full h-full object-cover rounded-t-lg"
-                    />
-                  ) : (
-                    <FolderHeart className="w-16 h-16 text-white" />
-                  )}
-                </div>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <div
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white rounded-full p-1 cursor-pointer"
-                    >
-                      <MoreVertical className="w-4 h-4 text-gray-600" />
-                    </div>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={() => navigate(`/media/album/${album.id}`)}
-                    >
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Открыть
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Edit2 className="w-4 h-4 mr-2" />
-                      Переименовать
-                    </DropdownMenuItem>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <DropdownMenuItem
-                          className="text-red-500 focus:text-red-500"
-                          onSelect={(e) => e.preventDefault()}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Удалить
-                        </DropdownMenuItem>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Удалить альбом?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Это действие нельзя отменить. Все файлы в альбоме будут удалены.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Отмена</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => deleteAlbum(album.id)}
-                            className="bg-red-500 hover:bg-red-600"
-                          >
-                            Удалить
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <CardTitle
-                  className="mb-2 cursor-pointer hover:text-red-500 transition-colors"
-                  onClick={() => navigate(`/media/album/${album.id}`)}
-                >
-                  {album.title}
-                </CardTitle>
-                {album.description && (
-                  <CardDescription className="mb-3 line-clamp-2">
-                    {album.description}
-                  </CardDescription>
-                )}
-                <div className="flex items-center gap-4 text-sm text-gray-500">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
-                    <span>{new Date(album.created_at).toLocaleDateString()}</span>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {albums.map((album) => (
+              <Card
+                key={album.id}
+                className="group hover:shadow-lg transition-shadow"
+              >
+                <CardHeader className="p-0 relative">
+                  <div
+                    className="aspect-video bg-gradient-to-br from-pink-200 to-purple-200 rounded-t-lg flex items-center justify-center group-hover:from-pink-300 group-hover:to-purple-300 transition-colors cursor-pointer"
+                    onClick={() => navigate(`/media/album/${album.id}`)}
+                  >
+                    {album.cover_url ? (
+                      <img
+                        src={album.cover_url}
+                        alt={album.title}
+                        className="w-full h-full object-cover rounded-t-lg"
+                      />
+                    ) : (
+                      <FolderHeart className="w-16 h-16 text-white" />
+                    )}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <div
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white rounded-full p-1 cursor-pointer"
+                      >
+                        <MoreVertical className="w-4 h-4 text-gray-600" />
+                      </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => navigate(`/media/album/${album.id}`)}
+                      >
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Открыть
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Edit2 className="w-4 h-4 mr-2" />
+                        Переименовать
+                      </DropdownMenuItem>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem
+                            className="text-red-500 focus:text-red-500"
+                            onSelect={(e) => e.preventDefault()}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Удалить
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Удалить альбом?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Это действие нельзя отменить. Все файлы в альбоме будут удалены.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Отмена</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteAlbum(album.id)}
+                              className="bg-red-500 hover:bg-red-600"
+                            >
+                              Удалить
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <CardTitle
+                    className="mb-2 cursor-pointer hover:text-red-500 transition-colors"
+                    onClick={() => navigate(`/media/album/${album.id}`)}
+                  >
+                    {album.title}
+                  </CardTitle>
+                  {album.description && (
+                    <CardDescription className="mb-3 line-clamp-2">
+                      {album.description}
+                    </CardDescription>
+                  )}
+                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-4 h-4" />
+                      <span>{new Date(album.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {hasMore && !searchQuery && (
+            <div className="mt-6 text-center">
+              <Button
+                variant="outline"
+                onClick={loadMore}
+                disabled={isLoadingMore}
+              >
+                {isLoadingMore ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Загрузка...
+                  </>
+                ) : (
+                  'Показать ещё'
+                )}
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
