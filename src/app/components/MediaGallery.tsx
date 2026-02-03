@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
-import { Switch } from './ui/switch';
+import { Checkbox } from './ui/checkbox';
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -29,6 +29,7 @@ import {
 } from './ui/dropdown-menu';
 import { toast } from 'sonner';
 import { searchAlbums, getAlbums, AlbumDTO } from '../utils/albumsApi';
+import { EditAlbumDialog } from './EditAlbumDialog';
 
 export default function MediaGallery() {
   const navigate = useNavigate();
@@ -157,6 +158,12 @@ export default function MediaGallery() {
     }
   };
 
+  const handleAlbumUpdated = (updatedAlbum: AlbumDTO) => {
+    setAlbums((prev) =>
+      prev.map((album) => (album.id === updatedAlbum.id ? updatedAlbum : album))
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -208,14 +215,21 @@ export default function MediaGallery() {
                   rows={3}
                 />
               </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="is_private">Личный альбом</Label>
-                <Switch
+              <div className="flex items-center gap-2">
+                <Checkbox
                   id="is_private"
                   checked={newAlbum.is_private}
-                  onCheckedChange={(checked) => setNewAlbum({ ...newAlbum, is_private: checked })}
+                  onCheckedChange={(checked) => setNewAlbum({ ...newAlbum, is_private: checked as boolean })}
                 />
+                <Label htmlFor="is_private" className="cursor-pointer">
+                  Личный альбом (доступен только мне)
+                </Label>
               </div>
+              {!newAlbum.is_private && (
+                <p className="text-sm text-muted-foreground">
+                  Общий альбом доступен вам и вашему партнёру.
+                </p>
+              )}
               <Button type="submit" className="w-full bg-red-500 hover:bg-red-600">
                 Создать
               </Button>
@@ -310,10 +324,12 @@ export default function MediaGallery() {
                         <ExternalLink className="w-4 h-4 mr-2" />
                         Открыть
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Edit2 className="w-4 h-4 mr-2" />
-                        Переименовать
-                      </DropdownMenuItem>
+                      <EditAlbumDialog album={album} onAlbumUpdated={handleAlbumUpdated}>
+                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                          <Edit2 className="w-4 h-4 mr-2" />
+                          Изменить
+                        </DropdownMenuItem>
+                      </EditAlbumDialog>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <DropdownMenuItem

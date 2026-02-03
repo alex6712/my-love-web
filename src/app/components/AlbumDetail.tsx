@@ -44,7 +44,8 @@ import { API_URL } from '../constants/api';
 import { useFileUpload, UploadProgress } from '../hooks/useFileUpload';
 import { MEDIA_CONFIG, formatFileSize } from '../constants/media';
 import { getDownloadPresignedUrl } from '../utils/fileApi';
-import { detachFilesFromAlbum } from '../utils/albumsApi';
+import { detachFilesFromAlbum, AlbumDTO } from '../utils/albumsApi';
+import { EditAlbumDialog } from './EditAlbumDialog';
 import { toast } from 'sonner';
 
 interface CreatorDTO {
@@ -199,6 +200,14 @@ export default function AlbumDetail() {
     }
   };
 
+  const handleAlbumUpdated = (updatedAlbum: AlbumDTO) => {
+    if (albumRef.current) {
+      const updated = { ...albumRef.current, ...updatedAlbum };
+      setAlbum(updated);
+      albumRef.current = updated;
+    }
+  };
+
   const handleFilesUpload = async (files: FileList) => {
     if (!albumId || files.length === 0) return;
 
@@ -303,18 +312,18 @@ export default function AlbumDetail() {
       </Button>
 
       <div className="mb-6">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h1 className="text-3xl mb-2">{album.title}</h1>
+        <div className="flex flex-col gap-4">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl sm:text-3xl mb-2 break-words">{album.title}</h1>
             {album.description && (
-              <p className="text-gray-600">{album.description}</p>
+              <p className="text-gray-600 break-words">{album.description}</p>
             )}
             <p className="text-sm text-gray-500 mt-2">
               Создано {new Date(album.created_at).toLocaleDateString('ru-RU')}
             </p>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-red-500 hover:bg-red-600">
@@ -376,6 +385,8 @@ export default function AlbumDetail() {
                 </div>
               </DialogContent>
             </Dialog>
+
+            <EditAlbumDialog album={album as AlbumWithItemsDTO & AlbumDTO} onAlbumUpdated={handleAlbumUpdated} />
 
             {isOwner && (
               <AlertDialog>

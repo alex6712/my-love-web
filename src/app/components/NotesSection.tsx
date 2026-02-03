@@ -1,5 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Plus, Gift, MapPin, Heart, Star, Sparkles, Trash2, Loader2, Layers } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -42,9 +49,14 @@ export default function NotesSection() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
-  const [newNote, setNewNote] = useState({
+  const [newNote, setNewNote] = useState<{
+    title: string;
+    content: string;
+    type: NoteType;
+  }>({
     title: '',
     content: '',
+    type: 'WISHLIST',
   });
 
   const limit = 12;
@@ -91,10 +103,10 @@ export default function NotesSection() {
       await createNote({
         title: newNote.title || undefined,
         content: newNote.content,
-        type: activeType === 'ALL' ? 'WISHLIST' : activeType,
+        type: newNote.type,
       });
       toast.success('Заметка создана!');
-      setNewNote({ title: '', content: '' });
+      setNewNote({ title: '', content: '', type: activeType === 'ALL' ? 'WISHLIST' : activeType });
       setDialogOpen(false);
       loadNotes(0);
     } catch (error) {
@@ -124,7 +136,15 @@ export default function NotesSection() {
           <h1 className="text-2xl mb-1">Заметки 📝</h1>
           <p className="text-gray-600">Ваши мысли, мечты и воспоминания</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={dialogOpen} onOpenChange={(open) => {
+          if (open) {
+            setNewNote(prev => ({
+              ...prev,
+              type: activeType === 'ALL' ? 'WISHLIST' : activeType,
+            }));
+          }
+          setDialogOpen(open);
+        }}>
           <DialogTrigger asChild>
             <Button className="bg-red-500 hover:bg-red-600">
               <Plus className="w-4 h-4 mr-2" />
@@ -136,7 +156,31 @@ export default function NotesSection() {
               <DialogTitle>Создать заметку</DialogTitle>
               <DialogDescription>Добавьте новую заметку</DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleCreateNote} className="space-y-4">
+              <form onSubmit={handleCreateNote} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Тип заметки</label>
+                <Select
+                  value={newNote.type}
+                  onValueChange={(value) => setNewNote({ ...newNote, type: value as NoteType })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Выберите тип" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {NOTE_TYPES.map((type) => {
+                      const Icon = type.icon;
+                      return (
+                        <SelectItem key={type.id} value={type.id}>
+                          <div className="flex items-center gap-2">
+                            <Icon className="w-4 h-4" />
+                            {type.label}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Заголовок</label>
                 <Input

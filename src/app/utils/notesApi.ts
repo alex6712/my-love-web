@@ -48,7 +48,7 @@ async function getAuthHeaders(): Promise<HeadersInit> {
 export async function getNotes(
   type?: NoteType | null,
   offset: number = 0,
-  limit: number = 10
+  limit: number = 10,
 ): Promise<NotesWithTotal> {
   let url = `${API_URL}/v1/notes?offset=${offset}&limit=${limit}`;
   if (type) {
@@ -69,9 +69,7 @@ export async function getNotes(
   return { notes: data.notes, total: data.notes.length };
 }
 
-export async function createNote(
-  request: CreateNoteRequest
-): Promise<void> {
+export async function createNote(request: CreateNoteRequest): Promise<void> {
   const response = await fetch(`${API_URL}/v1/notes`, {
     method: "POST",
     headers: await getAuthHeaders(),
@@ -86,10 +84,10 @@ export async function createNote(
 
 export async function updateNote(
   noteId: string,
-  request: UpdateNoteRequest
+  request: UpdateNoteRequest,
 ): Promise<void> {
   const response = await fetch(`${API_URL}/v1/notes/${noteId}`, {
-    method: "PUT",
+    method: "PATCH",
     headers: await getAuthHeaders(),
     body: JSON.stringify(request),
   });
