@@ -115,7 +115,7 @@ type ActiveType = NoteType | "ALL";
 
 export default function NotesSection() {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [activeType, setActiveType] = useState<ActiveType>("WISHLIST");
+  const [activeType, setActiveType] = useState<ActiveType>("ALL");
   const [notes, setNotes] = useState<NoteDTO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
