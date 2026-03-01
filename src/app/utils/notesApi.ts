@@ -1,5 +1,10 @@
 import { API_URL } from "../constants/api";
 
+export type AuthenticatedFetch = (
+  input: RequestInfo | URL,
+  init?: RequestInit,
+) => Promise<Response>;
+
 export interface NoteDTO {
   id: string;
   created_at: string;
@@ -49,13 +54,14 @@ export async function getNotes(
   type?: NoteType | null,
   offset: number = 0,
   limit: number = 10,
+  authenticatedFetch: AuthenticatedFetch = fetch,
 ): Promise<NotesWithTotal> {
   let url = `${API_URL}/v1/notes?offset=${offset}&limit=${limit}`;
   if (type) {
     url += `&t=${type}`;
   }
 
-  const response = await fetch(url, {
+  const response = await authenticatedFetch(url, {
     method: "GET",
     headers: await getAuthHeaders(),
   });
@@ -69,8 +75,11 @@ export async function getNotes(
   return { notes: data.notes, total: data.notes.length };
 }
 
-export async function createNote(request: CreateNoteRequest): Promise<void> {
-  const response = await fetch(`${API_URL}/v1/notes`, {
+export async function createNote(
+  request: CreateNoteRequest,
+  authenticatedFetch: AuthenticatedFetch = fetch,
+): Promise<void> {
+  const response = await authenticatedFetch(`${API_URL}/v1/notes`, {
     method: "POST",
     headers: await getAuthHeaders(),
     body: JSON.stringify(request),
@@ -85,8 +94,9 @@ export async function createNote(request: CreateNoteRequest): Promise<void> {
 export async function updateNote(
   noteId: string,
   request: UpdateNoteRequest,
+  authenticatedFetch: AuthenticatedFetch = fetch,
 ): Promise<void> {
-  const response = await fetch(`${API_URL}/v1/notes/${noteId}`, {
+  const response = await authenticatedFetch(`${API_URL}/v1/notes/${noteId}`, {
     method: "PATCH",
     headers: await getAuthHeaders(),
     body: JSON.stringify(request),
@@ -98,8 +108,11 @@ export async function updateNote(
   }
 }
 
-export async function deleteNote(noteId: string): Promise<void> {
-  const response = await fetch(`${API_URL}/v1/notes/${noteId}`, {
+export async function deleteNote(
+  noteId: string,
+  authenticatedFetch: AuthenticatedFetch = fetch,
+): Promise<void> {
+  const response = await authenticatedFetch(`${API_URL}/v1/notes/${noteId}`, {
     method: "DELETE",
     headers: await getAuthHeaders(),
   });

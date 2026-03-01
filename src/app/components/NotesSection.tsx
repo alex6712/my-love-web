@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "./AuthContext";
 import {
   Plus,
   Gift,
@@ -114,6 +115,7 @@ const NOTE_TYPE_COLORS: Record<
 type ActiveType = NoteType | "ALL";
 
 export default function NotesSection() {
+  const { authenticatedFetch } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeType, setActiveType] = useState<ActiveType>("ALL");
   const [notes, setNotes] = useState<NoteDTO[]>([]);
@@ -147,7 +149,7 @@ export default function NotesSection() {
     }
 
     try {
-      const data = await getNotes(typeParam, pageNum * limit, limit);
+      const data = await getNotes(typeParam, pageNum * limit, limit, authenticatedFetch);
 
       if (append) {
         setNotes((prev) => [...prev, ...data.notes]);
@@ -178,7 +180,7 @@ export default function NotesSection() {
         title: newNote.title || undefined,
         content: newNote.content,
         type: newNote.type,
-      });
+      }, authenticatedFetch);
       toast.success("Заметка создана!");
       setNewNote({
         title: "",
@@ -197,7 +199,7 @@ export default function NotesSection() {
   const handleDeleteNote = async (noteId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await deleteNote(noteId);
+      await deleteNote(noteId, authenticatedFetch);
       toast.success("Заметка удалена");
       loadNotes(0);
     } catch (error) {

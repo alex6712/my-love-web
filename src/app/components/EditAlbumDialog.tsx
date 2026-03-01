@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Settings2 } from 'lucide-react';
+import { useAuth } from './AuthContext';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -27,6 +28,7 @@ interface EditAlbumDialogProps {
 }
 
 export function EditAlbumDialog({ album, onAlbumUpdated, children }: EditAlbumDialogProps) {
+  const { authenticatedFetch } = useAuth();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(album.title);
   const [description, setDescription] = useState(album.description || '');
@@ -50,7 +52,7 @@ export function EditAlbumDialog({ album, onAlbumUpdated, children }: EditAlbumDi
         title: title !== album.title ? title : undefined,
         description: description !== (album.description || '') ? description : undefined,
         is_private: isPrivate,
-      });
+      }, authenticatedFetch);
       onAlbumUpdated(updatedAlbum);
       setOpen(false);
       toast.success('Альбом обновлён');
