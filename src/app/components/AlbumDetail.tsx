@@ -260,7 +260,7 @@ export default function AlbumDetail() {
     if (!albumId || !fileToDetach) return;
 
     try {
-      await detachFilesFromAlbum(albumId, [fileToDetach.id]);
+      await detachFilesFromAlbum(albumId, [fileToDetach.id], authenticatedFetch);
       toast.success('Файл откреплён от альбома');
       setFileToDetach(null);
       setDetachConfirmOpen(false);

@@ -1,5 +1,10 @@
 import { API_URL } from "../constants/api";
 
+export type AuthenticatedFetch = (
+  input: RequestInfo | URL,
+  init?: RequestInit,
+) => Promise<Response>;
+
 export interface AlbumDTO {
   id: string;
   created_at: string;
@@ -38,8 +43,9 @@ async function getAuthHeaders(): Promise<HeadersInit> {
 export async function getAlbums(
   offset: number = 0,
   limit: number = 12,
+  authenticatedFetch: AuthenticatedFetch = fetch,
 ): Promise<AlbumsWithTotal> {
-  const response = await fetch(
+  const response = await authenticatedFetch(
     `${API_URL}/v1/media/albums?offset=${offset}&limit=${limit}`,
     {
       method: "GET",
@@ -60,8 +66,9 @@ export async function searchAlbums(
   query: string,
   threshold: number = 0.15,
   limit: number = 10,
+  authenticatedFetch: AuthenticatedFetch = fetch,
 ): Promise<AlbumDTO[]> {
-  const response = await fetch(
+  const response = await authenticatedFetch(
     `${API_URL}/v1/media/albums/search?q=${encodeURIComponent(query)}&threshold=${threshold}&limit=${limit}`,
     {
       method: "GET",
@@ -81,8 +88,9 @@ export async function searchAlbums(
 export async function detachFilesFromAlbum(
   albumId: string,
   fileUuids: string[],
+  authenticatedFetch: AuthenticatedFetch = fetch,
 ): Promise<void> {
-  const response = await fetch(`${API_URL}/v1/media/albums/${albumId}/detach`, {
+  const response = await authenticatedFetch(`${API_URL}/v1/media/albums/${albumId}/detach`, {
     method: "PATCH",
     headers: await getAuthHeaders(),
     body: JSON.stringify({ files_uuids: fileUuids }),
@@ -97,8 +105,9 @@ export async function detachFilesFromAlbum(
 export async function attachFilesToAlbum(
   albumId: string,
   fileUuids: string[],
+  authenticatedFetch: AuthenticatedFetch = fetch,
 ): Promise<void> {
-  const response = await fetch(`${API_URL}/v1/media/albums/${albumId}/attach`, {
+  const response = await authenticatedFetch(`${API_URL}/v1/media/albums/${albumId}/attach`, {
     method: "PATCH",
     headers: await getAuthHeaders(),
     body: JSON.stringify({ files_uuids: fileUuids }),
@@ -113,8 +122,9 @@ export async function attachFilesToAlbum(
 export async function updateAlbum(
   albumId: string,
   data: { title?: string; description?: string | null; is_private?: boolean },
+  authenticatedFetch: AuthenticatedFetch = fetch,
 ): Promise<AlbumDTO> {
-  const response = await fetch(`${API_URL}/v1/media/albums/${albumId}`, {
+  const response = await authenticatedFetch(`${API_URL}/v1/media/albums/${albumId}`, {
     method: "PATCH",
     headers: await getAuthHeaders(),
     body: JSON.stringify(data),

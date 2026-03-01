@@ -68,7 +68,7 @@ export default function MediaGallery() {
     }
 
     try {
-      const data = await getAlbums(pageNum * limit, limit);
+      const data = await getAlbums(pageNum * limit, limit, authenticatedFetch);
 
       if (append) {
         setAlbums((prev) => [...prev, ...data.albums]);
@@ -98,7 +98,7 @@ export default function MediaGallery() {
 
     setIsSearching(true);
     try {
-      const results = await searchAlbums(searchQuery, 0.15, 50);
+      const results = await searchAlbums(searchQuery, 0.15, 50, authenticatedFetch);
       setAlbums(results);
       setHasMore(false);
     } catch (error) {
