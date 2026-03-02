@@ -1,13 +1,46 @@
+import { useEffect, useState } from 'react';
 import { Heart, Calendar, Image, MessageCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { useAuth } from './AuthContext';
+import { getDashboardStats } from '../utils/dashboardApi';
 
 export default function HomeSection() {
-  const { user } = useAuth();
+  const { user, authenticatedFetch } = useAuth();
+  const [filesCount, setFilesCount] = useState<string>('...');
+  const [notesCount, setNotesCount] = useState<string>('...');
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadDashboardStats = async () => {
+      try {
+        const stats = await getDashboardStats(authenticatedFetch);
+        if (!isMounted) {
+          return;
+        }
+
+        setFilesCount(String(stats.filesCount));
+        setNotesCount(String(stats.notesCount));
+      } catch {
+        if (!isMounted) {
+          return;
+        }
+
+        setFilesCount('—');
+        setNotesCount('—');
+      }
+    };
+
+    loadDashboardStats();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [authenticatedFetch]);
 
   const stats = [
-    { label: 'Фотографий', value: '∞', icon: Image, color: 'text-pink-500' },
-    { label: 'Заметок', value: '∞', icon: MessageCircle, color: 'text-purple-500' },
+    { label: 'Фотографий', value: filesCount, icon: Image, color: 'text-pink-500' },
+    { label: 'Заметок', value: notesCount, icon: MessageCircle, color: 'text-purple-500' },
     { label: 'Дней вместе', value: '∞', icon: Calendar, color: 'text-red-500' },
     { label: 'Моментов счастья', value: '∞', icon: Heart, color: 'text-rose-500' },
   ];
