@@ -28,6 +28,12 @@ interface UseFileUploadOptions {
   authenticatedFetch: (url: string, options?: RequestInit) => Promise<Response>;
 }
 
+interface UploadBatchFailedItem {
+  code: string;
+  message: string;
+  client_ref_id: string;
+}
+
 interface UseFileUploadReturn {
   uploads: UploadProgress[];
   uploadFile: (
@@ -104,6 +110,49 @@ export function useFileUpload(
 
     const data = await response.json();
     return { file_id: data.url.file_id, presigned_url: data.url.presigned_url };
+  };
+
+
+
+  const getBatchPresignedUrls = async (
+    filesMetadata: Array<{
+      client_ref_id: string;
+      content_type: string;
+      title: string;
+      description: string | null;
+    }>,
+  ): Promise<{
+    successful: Array<{
+      file_id: string;
+      presigned_url: string;
+      client_ref_id: string;
+    }>;
+    failed: UploadBatchFailedItem[];
+  }> => {
+    const token = localStorage.getItem("access_token");
+    const idempotencyKey = generateIdempotencyKey();
+
+    const response = await fetchWithAuth(`${API_URL}/v1/media/files/upload/batch`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
+      },
+      body: JSON.stringify({ files_metadata: filesMetadata }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || "Failed to get upload URLs");
+    }
+
+    const data = await response.json();
+
+    return {
+      successful: data.successful || [],
+      failed: data.failed || [],
+    };
   };
 
   const uploadToS3 = (
@@ -232,25 +281,127 @@ export function useFileUpload(
   const uploadFiles = useCallback(
     async (files: FileList, defaultTitle?: string): Promise<string[]> => {
       setIsUploading(true);
+      const fileArray = Array.from(files);
+      const maxBatchFiles = 50;
       const results: string[] = [];
       const errors: string[] = [];
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+      if (fileArray.length === 0) {
+        setIsUploading(false);
+        return results;
+      }
+
+      const filesForUpload = fileArray.slice(0, maxBatchFiles);
+      const filesOverLimit = fileArray.slice(maxBatchFiles);
+
+      filesOverLimit.forEach((file) => {
+        errors.push(file.name);
+      });
+
+      const uploadStates = filesForUpload.map((file) => createUploadState(file));
+      setUploads((prev) => [...prev, ...uploadStates]);
+
+      const validItems: Array<{
+        clientRefId: string;
+        file: File;
+        title: string;
+      }> = [];
+
+      for (let i = 0; i < filesForUpload.length; i++) {
+        const file = filesForUpload[i];
+        const uploadState = uploadStates[i];
         const title = defaultTitle || file.name;
 
-        try {
-          const fileId = await uploadSingleFile(file, title);
-          results.push(fileId);
-        } catch (error) {
+        if (file.size > MEDIA_CONFIG.MAX_FILE_SIZE_BYTES) {
+          const errorMessage = `File size exceeds maximum allowed (${formatFileSize(MEDIA_CONFIG.MAX_FILE_SIZE_BYTES)})`;
           errors.push(file.name);
+          updateUpload(uploadState.id, { status: "error", error: errorMessage });
+          continue;
         }
+
+        if (!isSupportedType(file.type)) {
+          const errorMessage = `Unsupported file type: ${file.type}. Supported types: ${MEDIA_CONFIG.SUPPORTED_TYPES.join(", ")}`;
+          errors.push(file.name);
+          updateUpload(uploadState.id, { status: "error", error: errorMessage });
+          continue;
+        }
+
+        updateUpload(uploadState.id, { status: "uploading" });
+        validItems.push({ clientRefId: uploadState.id, file, title });
+      }
+
+      const stateByClientRefId = new Map(validItems.map((item) => [item.clientRefId, item]));
+
+      try {
+        if (validItems.length === 1) {
+          const item = validItems[0];
+          const { file_id, presigned_url } = await getPresignedUrl(item.file.type, item.title);
+
+          await uploadToS3(presigned_url, item.file, (progress) => {
+            updateUpload(item.clientRefId, { progress: Math.round(progress) });
+          });
+
+          updateUpload(item.clientRefId, { status: "confirming", progress: 100 });
+          await confirmUpload(file_id);
+          updateUpload(item.clientRefId, { status: "completed" });
+
+          results.push(file_id);
+        } else if (validItems.length >= 2) {
+          const presignedData = await getBatchPresignedUrls(
+            validItems.map((item) => ({
+              // clientRefId === uploadState.id, используется для корреляции результатов batch-ответа
+              client_ref_id: item.clientRefId,
+              content_type: item.file.type,
+              title: item.title,
+              description: null,
+            })),
+          );
+
+          presignedData.failed.forEach((failedItem) => {
+            const item = stateByClientRefId.get(failedItem.client_ref_id);
+            if (!item) {
+              return;
+            }
+
+            errors.push(item.file.name);
+            updateUpload(item.clientRefId, {
+              status: "error",
+              error: failedItem.message,
+            });
+
+            toast.error(`Failed to prepare upload for ${item.file.name}: ${failedItem.message}`);
+          });
+
+          await Promise.all(
+            presignedData.successful.map(async (successfulItem) => {
+              const item = stateByClientRefId.get(successfulItem.client_ref_id);
+              if (!item) {
+                return;
+              }
+
+              try {
+                await uploadToS3(successfulItem.presigned_url, item.file, (progress) => {
+                  updateUpload(item.clientRefId, { progress: Math.round(progress) });
+                });
+
+                updateUpload(item.clientRefId, { status: "confirming", progress: 100 });
+                await confirmUpload(successfulItem.file_id);
+                updateUpload(item.clientRefId, { status: "completed" });
+                results.push(successfulItem.file_id);
+              } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : "Upload failed";
+                errors.push(item.file.name);
+                updateUpload(item.clientRefId, { status: "error", error: errorMessage });
+              }
+            }),
+          );
+        }
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Upload failed");
       }
 
       if (errors.length > 0) {
-        toast.error(
-          `Failed to upload ${errors.length} file(s): ${errors.join(", ")}`,
-        );
+        toast.error(`Failed to upload ${errors.length} file(s): ${errors.join(", ")}`);
       }
 
       if (results.length > 0) {

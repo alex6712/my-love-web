@@ -43,7 +43,7 @@ import { useAuth } from './AuthContext';
 import { API_URL } from '../constants/api';
 import { useFileUpload, UploadProgress } from '../hooks/useFileUpload';
 import { MEDIA_CONFIG, formatFileSize } from '../constants/media';
-import { getDownloadPresignedUrl } from '../utils/fileApi';
+import { getDownloadPresignedUrls } from '../utils/fileApi';
 import { detachFilesFromAlbum, AlbumDTO } from '../utils/albumsApi';
 import { EditAlbumDialog } from './EditAlbumDialog';
 import { toast } from 'sonner';
@@ -139,17 +139,26 @@ export default function AlbumDetail() {
       const urls: Record<string, string> = {};
       const itemsToFetch = append && currentAlbum ? [...currentAlbum.items, ...data.album.items] : data.album.items;
       const currentFileUrls = fileUrlsRef.current;
+      const missingItems = itemsToFetch.filter(
+        (item) =>
+          (item.content_type.startsWith('image/') || item.content_type.startsWith('video/')) &&
+          !currentFileUrls[item.id],
+      );
 
-      for (const item of itemsToFetch) {
-        if (item.content_type.startsWith('image/') || item.content_type.startsWith('video/')) {
-          if (!currentFileUrls[item.id]) {
-            try {
-              const presignedUrl = await getDownloadPresignedUrl(item.id);
-              urls[item.id] = presignedUrl;
-            } catch (error) {
-              console.error(`Failed to get URL for file ${item.id}:`, error);
-            }
-          }
+      if (missingItems.length > 0) {
+        try {
+          const downloadResult = await getDownloadPresignedUrls(
+            missingItems.map((item) => item.id),
+            authenticatedFetch,
+          );
+
+          Object.assign(urls, downloadResult.successful);
+
+          downloadResult.failed.forEach((failedItem) => {
+            toast.error(`Не удалось получить ссылку для одного из файлов`);
+          });
+        } catch (error) {
+          console.error('Failed to get download URLs:', error);
         }
       }
 
