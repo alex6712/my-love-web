@@ -11,7 +11,7 @@ function AppContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-red-50 to-purple-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-red-50 to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-purple-950">
         <div className="text-center">
           <Heart className="w-16 h-16 text-red-500 animate-pulse mx-auto mb-4" />
           <p className="text-gray-600">Загрузка...</p>
@@ -38,6 +38,8 @@ function AppContent() {
         <Route path="/notes" element={<NotesSection />} />
         <Route path="/games" element={<GamesSection />} />
         <Route path="/couple" element={<CoupleSection />} />
+        <Route path="/profile" element={<ProfileSection />} />
+        <Route path="/settings" element={<SettingsSection />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Dashboard>
@@ -59,3 +61,5 @@ import MediaGallery from './components/MediaGallery';
 import NotesSection from './components/NotesSection';
 import GamesSection from './components/GamesSection';
 import CoupleSection from './components/CoupleSection';
+import ProfileSection from './components/ProfileSection';
+import SettingsSection from './components/SettingsSection';
