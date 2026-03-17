@@ -1,5 +1,5 @@
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Heart, Images, StickyNote, Gamepad2, Users, LogOut, Menu } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Heart, Images, StickyNote, Gamepad2, Users, LogOut, Menu, UserCircle2, Settings } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
@@ -9,7 +9,7 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const menuItems = [
+  const mainMenuItems = [
     { id: '/', label: 'Главная', icon: Heart },
     { id: '/media', label: 'Медиа', icon: Images },
     { id: '/notes', label: 'Заметки', icon: StickyNote },
@@ -23,6 +23,11 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
     }
     return location.pathname.startsWith(path);
   };
+
+  const bottomMenuItems = [
+    { id: '/profile', label: 'Профиль', icon: UserCircle2 },
+    { id: '/settings', label: 'Настройки', icon: Settings },
+  ];
 
   const SidebarContent = () => (
     <div className="h-full flex flex-col">
@@ -38,7 +43,7 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
 
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
-          {menuItems.map((item) => {
+          {mainMenuItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.id);
             return (
@@ -59,6 +64,25 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
         </ul>
       </nav>
 
+      <div className="p-4 border-t space-y-2">
+        {bottomMenuItems.map((item) => {
+          const Icon = item.icon;
+          const active = isActive(item.id);
+
+          return (
+            <Button
+              key={item.id}
+              variant={active ? 'default' : 'ghost'}
+              className={`w-full justify-start ${active ? 'bg-red-500 hover:bg-red-600' : ''}`}
+              onClick={() => navigate(item.id)}
+            >
+              <Icon className="mr-2 h-4 w-4" />
+              {item.label}
+            </Button>
+          );
+        })}
+      </div>
+
       <div className="p-4 border-t">
         <Button variant="ghost" className="w-full justify-start" onClick={logout}>
           <LogOut className="mr-2 h-4 w-4" />
@@ -69,16 +93,16 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-red-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-red-50 to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-purple-950">
       <div className="flex h-screen">
-        <aside className="hidden md:block w-64 bg-white border-r">
+        <aside className="hidden md:block w-64 bg-card border-r">
           <SidebarContent />
         </aside>
 
         <main className="flex-1 overflow-auto">
           <Sheet>
             <SheetTrigger asChild>
-              <div className="md:hidden bg-white border-b p-4 flex items-center justify-between sticky top-0 z-10">
+              <div className="md:hidden bg-card border-b p-4 flex items-center justify-between sticky top-0 z-10">
                 <Button variant="ghost" size="icon">
                   <Menu className="h-5 w-5" />
                 </Button>
