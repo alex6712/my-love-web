@@ -20,6 +20,7 @@ import { Progress } from './ui/progress';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
+import { Skeleton } from './ui/skeleton';
 import {
   Dialog,
   DialogContent,
@@ -96,6 +97,7 @@ export default function AlbumDetail() {
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
   const [selectedFile, setSelectedFile] = useState<FileDTO | null>(null);
   const [fileUrls, setFileUrls] = useState<Record<string, string>>({});
+  const [previewErrors, setPreviewErrors] = useState<Record<string, boolean>>({});
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [detachConfirmOpen, setDetachConfirmOpen] = useState(false);
@@ -137,6 +139,7 @@ export default function AlbumDetail() {
       }
 
       const urls: Record<string, string> = {};
+      const failedPreviewIds: string[] = [];
       const itemsToFetch = append && currentAlbum ? [...currentAlbum.items, ...data.album.items] : data.album.items;
       const currentFileUrls = fileUrlsRef.current;
       const missingItems = itemsToFetch.filter(
@@ -155,6 +158,7 @@ export default function AlbumDetail() {
           Object.assign(urls, downloadResult.successful);
 
           downloadResult.failed.forEach((failedItem) => {
+            failedPreviewIds.push(failedItem.file_id);
             toast.error(`Не удалось получить ссылку для одного из файлов`);
           });
         } catch (error) {
@@ -165,6 +169,16 @@ export default function AlbumDetail() {
       if (Object.keys(urls).length > 0) {
         fileUrlsRef.current = { ...currentFileUrls, ...urls };
         setFileUrls(fileUrlsRef.current);
+      }
+
+      if (failedPreviewIds.length > 0) {
+        setPreviewErrors((prev) => {
+          const next = { ...prev };
+          failedPreviewIds.forEach((id) => {
+            next[id] = true;
+          });
+          return next;
+        });
       }
 
       setHasMore(data.album.items.length >= limit);
@@ -287,6 +301,28 @@ export default function AlbumDetail() {
   };
 
   const isOwner = album?.creator.id === user?.id;
+
+  const retryLoadPreview = async (fileId: string) => {
+    setPreviewErrors((prev) => ({ ...prev, [fileId]: false }));
+
+    try {
+      const downloadResult = await getDownloadPresignedUrls([fileId], authenticatedFetch);
+      const url = downloadResult.successful[fileId];
+
+      if (url) {
+        fileUrlsRef.current = { ...fileUrlsRef.current, [fileId]: url };
+        setFileUrls(fileUrlsRef.current);
+        return;
+      }
+
+      setPreviewErrors((prev) => ({ ...prev, [fileId]: true }));
+      toast.error('Не удалось загрузить превью файла');
+    } catch (error) {
+      console.error('Error retrying preview URL:', error);
+      setPreviewErrors((prev) => ({ ...prev, [fileId]: true }));
+      toast.error('Не удалось загрузить превью файла');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -476,10 +512,12 @@ export default function AlbumDetail() {
                 >
                   <div className="aspect-square bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center">
                     {file.content_type.startsWith('image/') ? (
-                      <img
-                        src={fileUrls[file.id] || ''}
+                      <PreviewState
+                        previewUrl={fileUrls[file.id]}
+                        hasError={!!previewErrors[file.id]}
                         alt={file.title}
-                        className="w-full h-full object-cover rounded-t-lg"
+                        onRetry={() => retryLoadPreview(file.id)}
+                        imageClassName="w-full h-full object-cover rounded-t-lg"
                       />
                     ) : file.content_type.startsWith('video/') ? (
                       <Video className="w-16 h-16 text-gray-400" />
@@ -538,10 +576,12 @@ export default function AlbumDetail() {
           {selectedFile && (
             <div className="space-y-4">
               {selectedFile.content_type.startsWith('image/') && (
-                <img
-                  src={fileUrls[selectedFile.id] || ''}
+                <PreviewState
+                  previewUrl={fileUrls[selectedFile.id]}
+                  hasError={!!previewErrors[selectedFile.id]}
                   alt={selectedFile.title}
-                  className="w-full rounded-lg"
+                  onRetry={() => retryLoadPreview(selectedFile.id)}
+                  imageClassName="w-full rounded-lg"
                 />
               )}
 
@@ -576,6 +616,42 @@ export default function AlbumDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+function PreviewState({
+  previewUrl,
+  hasError,
+  alt,
+  onRetry,
+  imageClassName,
+}: {
+  previewUrl?: string;
+  hasError: boolean;
+  alt: string;
+  onRetry: () => void;
+  imageClassName: string;
+}) {
+  if (previewUrl) {
+    return <img src={previewUrl} alt={alt} className={imageClassName} />;
+  }
+
+  if (hasError) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 text-center px-4">
+        <p className="text-xs text-gray-600">Не удалось загрузить</p>
+        <Button variant="outline" size="sm" onClick={onRetry}>
+          Повторить
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full h-full flex flex-col items-center justify-center gap-2 px-4">
+      <Skeleton className="w-16 h-16 rounded-md" />
+      <p className="text-xs text-gray-600 text-center">Превью загружается</p>
     </div>
   );
 }
