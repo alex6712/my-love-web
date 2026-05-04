@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
   Upload,
   Trash2,
   FileImage,
@@ -94,7 +96,7 @@ export default function AlbumDetail() {
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<FileDTO | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [fileUrls, setFileUrls] = useState<Record<string, string>>({});
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -106,6 +108,27 @@ export default function AlbumDetail() {
   const fetchAlbumRef = useRef<((pageNum?: number, append?: boolean) => Promise<void>) | null>(null);
 
   const limit = 20;
+  const selectedFile = selectedIndex !== null && album ? album.items[selectedIndex] ?? null : null;
+  const canGoPrev = selectedIndex !== null && selectedIndex > 0;
+  const canGoNext = selectedIndex !== null && album ? selectedIndex < album.items.length - 1 : false;
+
+  const closePreview = useCallback(() => {
+    setSelectedIndex(null);
+  }, []);
+
+  const showPrev = useCallback(() => {
+    setSelectedIndex((prev) => {
+      if (prev === null || prev <= 0) return prev;
+      return prev - 1;
+    });
+  }, []);
+
+  const showNext = useCallback(() => {
+    setSelectedIndex((prev) => {
+      if (prev === null || !album || prev >= album.items.length - 1) return prev;
+      return prev + 1;
+    });
+  }, [album]);
 
   const fetchAlbumFn = useCallback(async (pageNum: number = 0, append: boolean = false) => {
     if (!albumId) return;
@@ -288,6 +311,23 @@ export default function AlbumDetail() {
 
   const isOwner = album?.creator.id === user?.id;
 
+  useEffect(() => {
+    if (selectedIndex === null) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        closePreview();
+      } else if (event.key === 'ArrowLeft') {
+        showPrev();
+      } else if (event.key === 'ArrowRight') {
+        showNext();
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selectedIndex, closePreview, showPrev, showNext]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -468,11 +508,11 @@ export default function AlbumDetail() {
         ) : (
           <>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {album.items.map((file) => (
+              {album.items.map((file, i) => (
                 <Card
                   key={file.id}
                   className="group cursor-pointer hover:shadow-lg transition-shadow relative"
-                  onClick={() => setSelectedFile(file)}
+                  onClick={() => setSelectedIndex(i)}
                 >
                   <div className="aspect-square bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center">
                     {file.content_type.startsWith('image/') ? (
@@ -529,6 +569,8 @@ export default function AlbumDetail() {
         )}
       </div>
 
+      <Dialog open={selectedIndex !== null} onOpenChange={(open) => !open && closePreview()}>
+        <DialogContent className="max-w-4xl">
       <Dialog open={!!selectedFile} onOpenChange={() => setSelectedFile(null)}>
         <DialogContent className="w-[95vw] max-w-5xl">
           <DialogHeader>
@@ -536,6 +578,34 @@ export default function AlbumDetail() {
           </DialogHeader>
 
           {selectedFile && (
+            <div className="space-y-4 relative">
+              <button
+                type="button"
+                onClick={showPrev}
+                disabled={!canGoPrev}
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 h-14 w-14 md:h-12 md:w-12 rounded-full bg-black/50 text-white flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed"
+                aria-label="Предыдущий файл"
+              >
+                <ChevronLeft className="w-8 h-8 md:w-6 md:h-6" />
+              </button>
+
+              <button
+                type="button"
+                onClick={showNext}
+                disabled={!canGoNext}
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 h-14 w-14 md:h-12 md:w-12 rounded-full bg-black/50 text-white flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed"
+                aria-label="Следующий файл"
+              >
+                <ChevronRight className="w-8 h-8 md:w-6 md:h-6" />
+              </button>
+
+              {selectedFile.content_type.startsWith('image/') && (
+                <img
+                  src={fileUrls[selectedFile.id] || ''}
+                  alt={selectedFile.title}
+                  className="w-full rounded-lg"
+                />
+              )}
             <div className="space-y-4">
               <div className="max-h-[75vh]">
                 {selectedFile.content_type.startsWith('image/') && (
