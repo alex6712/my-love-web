@@ -569,8 +569,6 @@ export default function AlbumDetail() {
         )}
       </div>
 
-      <Dialog open={selectedIndex !== null} onOpenChange={(open) => !open && closePreview()}>
-        <DialogContent className="max-w-4xl">
       <Dialog open={!!selectedFile} onOpenChange={() => setSelectedFile(null)}>
         <DialogContent className="w-[95vw] max-w-5xl">
           <DialogHeader>
@@ -606,37 +604,6 @@ export default function AlbumDetail() {
                   className="w-full rounded-lg"
                 />
               )}
-            <div className="space-y-4">
-              <div className="max-h-[75vh]">
-                {selectedFile.content_type.startsWith('image/') && (
-                  <img
-                    src={fileUrls[selectedFile.id] || ''}
-                    alt={selectedFile.title}
-                    className="w-full max-h-[75vh] object-contain rounded-lg"
-                  />
-                )}
-
-                {selectedFile.content_type.startsWith('video/') && (
-                  <video
-                    src={fileUrls[selectedFile.id] || ''}
-                    controls
-                    className="w-full max-h-[75vh] object-contain rounded-lg"
-                  />
-                )}
-              </div>
-
-              <div className="max-h-32 overflow-y-auto space-y-3 pr-1">
-                {selectedFile.description && (
-                  <p className="text-gray-600">{selectedFile.description}</p>
-                )}
-
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <span>
-                    Загружено{' '}
-                    {new Date(selectedFile.created_at).toLocaleString('ru-RU')}
-                  </span>
-                </div>
-              </div>
             </div>
           )}
         </DialogContent>

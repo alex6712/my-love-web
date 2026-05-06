@@ -1,9 +1,20 @@
+import { useState } from 'react';
 import { KeyRound, Pencil, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from './AuthContext';
+import { API_URL } from '../constants/api';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
 
 const profileActions = [
   { id: 'change-password', label: 'Сменить пароль', icon: KeyRound },
@@ -26,12 +37,78 @@ const formatRegistrationDate = (date: string) => {
 };
 
 export default function ProfileSection() {
-  const { user } = useAuth();
+  const { user, authenticatedFetch } = useAuth();
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
 
   const fallback = user?.username?.charAt(0).toUpperCase() ?? 'U';
 
-  const handleStubAction = (label: string) => {
-    toast.info(`${label} станет доступна после добавления endpoint на backend`);
+  const validatePassword = (password: string): string[] => {
+    const errors: string[] = [];
+    if (password.length < 12) {
+      errors.push('Минимум 12 символов');
+    }
+    if (!/[A-Z]/.test(password)) {
+      errors.push('Минимум одна заглавная буква');
+    }
+    if (!/[a-z]/.test(password)) {
+      errors.push('Минимум одна строчная буква');
+    }
+    if (!/[0-9]/.test(password)) {
+      errors.push('Минимум одна цифра');
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      errors.push('Минимум один спецсимвол');
+    }
+    return errors;
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordErrors([]);
+
+    const newPassErrors = validatePassword(passwordForm.newPassword);
+    if (newPassErrors.length > 0) {
+      setPasswordErrors(newPassErrors);
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordErrors(['Пароли не совпадают']);
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await authenticatedFetch(`${API_URL}/v1/auth/change-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          current_password: passwordForm.currentPassword,
+          new_password: passwordForm.newPassword,
+          confirm_password: passwordForm.confirmPassword,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Пароль успешно изменён');
+        setChangePasswordOpen(false);
+        setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      } else {
+        const error = await response.json();
+        setPasswordErrors([error.detail || 'Ошибка смены пароля']);
+      }
+    } catch (error) {
+      setPasswordErrors(['Ошибка соединения']);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -75,7 +152,13 @@ export default function ProfileSection() {
                 key={action.id}
                 variant="outline"
                 className="justify-start"
-                onClick={() => handleStubAction(action.label)}
+                onClick={() => {
+                  if (action.id === 'change-password') {
+                    setChangePasswordOpen(true);
+                  } else {
+                    toast.info(`${action.label} станет доступна после добавления endpoint на backend`);
+                  }
+                }}
               >
                 <Icon className="mr-2 h-4 w-4" />
                 {action.label}
@@ -84,6 +167,67 @@ export default function ProfileSection() {
           })}
         </CardContent>
       </Card>
+
+      <Dialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Смена пароля</DialogTitle>
+            <DialogDescription>
+              Введите текущий пароль и придумайте новый
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleChangePassword} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="current-password">Текущий пароль</Label>
+              <Input
+                id="current-password"
+                type="password"
+                value={passwordForm.currentPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-password">Новый пароль</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={passwordForm.newPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                required
+              />
+              <p className="text-xs text-gray-500">
+                Минимум 12 символов, upper/lower case, цифра, спецсимвол
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Подтвердите пароль</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={passwordForm.confirmPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                required
+              />
+            </div>
+            {passwordErrors.length > 0 && (
+              <div className="text-sm text-red-500 space-y-1">
+                {passwordErrors.map((error, i) => (
+                  <p key={i}>{error}</p>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={() => setChangePasswordOpen(false)}>
+                Отмена
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Сохранение...' : 'Сохранить'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

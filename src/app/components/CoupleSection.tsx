@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Heart, UserPlus, Check, X, Calendar } from 'lucide-react';
+import { Heart, UserPlus, Check, X, Calendar, Save, XCircle } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { API_URL } from '../constants/api';
 import { Button } from './ui/button';
@@ -9,6 +9,8 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Badge } from './ui/badge';
 import { Avatar, AvatarFallback } from './ui/avatar';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Calendar as CalendarPicker } from './ui/calendar';
 import { toast } from 'sonner';
 
 interface Partner {
@@ -17,6 +19,16 @@ interface Partner {
   username: string;
   avatar_url?: string | null;
   is_active: boolean;
+}
+
+interface CoupleInfo {
+  couple: {
+    id: string;
+    created_at: string;
+    partner: Partner;
+    relationship_started_on: string | null;
+  } | null;
+  detail?: string;
 }
 
 interface CoupleRequest {
@@ -30,11 +42,13 @@ interface CoupleRequest {
 
 export default function CoupleSection() {
   const { authenticatedFetch } = useAuth();
-  const [partner, setPartner] = useState<Partner | null>(null);
+  const [coupleInfo, setCoupleInfo] = useState<CoupleInfo | null>(null);
   const [requests, setRequests] = useState<CoupleRequest[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [partnerUsername, setPartnerUsername] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [isUpdatingDate, setIsUpdatingDate] = useState(false);
 
   useEffect(() => {
     fetchPartnerInfo();
@@ -43,11 +57,14 @@ export default function CoupleSection() {
 
   const fetchPartnerInfo = async () => {
     try {
-      const response = await authenticatedFetch(`${API_URL}/v1/couples/partner`);
+      const response = await authenticatedFetch(`${API_URL}/v1/couples`);
 
       if (response.ok) {
         const data = await response.json();
-        setPartner(data.partner);
+        setCoupleInfo(data);
+        if (data.couple?.relationship_started_on) {
+          setSelectedDate(new Date(data.couple.relationship_started_on));
+        }
       }
     } catch (error) {
       console.error('Error fetching partner:', error);
@@ -115,6 +132,41 @@ export default function CoupleSection() {
     }
   };
 
+  const updateRelationshipDate = async (date: Date | null) => {
+    if (!coupleInfo?.couple?.id) return;
+    
+    setIsUpdatingDate(true);
+    try {
+      const response = await authenticatedFetch(`${API_URL}/v1/couples/${coupleInfo.couple.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          relationship_started_on: date ? date.toISOString().split('T')[0] : null,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCoupleInfo({
+          ...coupleInfo,
+          couple: {
+            ...coupleInfo.couple!,
+            relationship_started_on: date ? date.toISOString().split('T')[0] : null,
+          },
+        });
+        toast.success('Дата обновлена');
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || 'Не удалось обновить дату');
+      }
+    } catch (error) {
+      console.error('Error updating date:', error);
+      toast.error('Ошибка при обновлении даты');
+    } finally {
+      setIsUpdatingDate(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'PENDING':
@@ -151,7 +203,7 @@ export default function CoupleSection() {
 
       <div className="space-y-6">
         {/* Partner Info */}
-        {partner ? (
+        {coupleInfo?.couple?.partner ? (
           <Card>
             <CardHeader>
               <CardTitle>Ваш партнер</CardTitle>
@@ -160,17 +212,17 @@ export default function CoupleSection() {
               <div className="flex items-center gap-4">
                 <Avatar className="h-20 w-20">
                   <AvatarFallback className="bg-gradient-to-br from-pink-400 to-red-400 text-white text-2xl">
-                    {partner.username.charAt(0).toUpperCase()}
+                    {coupleInfo.couple.partner.username.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <h3 className="text-xl mb-1">@{partner.username}</h3>
+                  <h3 className="text-xl mb-1">@{coupleInfo.couple.partner.username}</h3>
                   <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      <span>С {new Date(partner.created_at).toLocaleDateString()}</span>
+                      <span>С {new Date(coupleInfo.couple.partner.created_at).toLocaleDateString()}</span>
                     </div>
-                    {partner.is_active ? (
+                    {coupleInfo.couple.partner.is_active ? (
                       <Badge className="bg-green-100 text-green-700">Активен</Badge>
                     ) : (
                       <Badge className="bg-gray-100 text-gray-700">Не активен</Badge>
@@ -178,6 +230,51 @@ export default function CoupleSection() {
                   </div>
                 </div>
                 <Heart className="w-12 h-12 text-red-500 fill-red-500" />
+              </div>
+
+              <div className="mt-4 pt-4 border-t">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">Дата начала отношений:</span>
+                    <span className="text-sm font-medium">
+                      {coupleInfo.couple.relationship_started_on
+                        ? new Date(coupleInfo.couple.relationship_started_on).toLocaleDateString('ru-RU')
+                        : 'Не указана'}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" disabled={isUpdatingDate}>
+                          <Calendar className="w-4 h-4 mr-1" />
+                          {selectedDate ? 'Изменить' : 'Указать дату'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarPicker
+                          mode="single"
+                          selected={selectedDate || undefined}
+                          onSelect={(date) => {
+                            setSelectedDate(date || null);
+                            updateRelationshipDate(date || null);
+                          }}
+                          disabled={(date) => date > new Date()}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    {coupleInfo.couple.relationship_started_on && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={isUpdatingDate}
+                        onClick={() => updateRelationshipDate(null)}
+                      >
+                        <XCircle className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -276,7 +373,7 @@ export default function CoupleSection() {
         )}
 
         {/* Relationship Stats */}
-        {partner && (
+        {coupleInfo?.couple?.partner && (
           <Card>
             <CardHeader>
               <CardTitle>Ваши отношения</CardTitle>
@@ -285,17 +382,24 @@ export default function CoupleSection() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="text-center p-4 bg-pink-50 rounded-lg">
                   <Calendar className="w-8 h-8 text-pink-500 mx-auto mb-2" />
-                  <p className="text-2xl mb-1">∞</p>
+                  <p className="text-2xl mb-1">
+                    {coupleInfo.couple.relationship_started_on
+                      ? Math.floor(
+                          (Date.now() - new Date(coupleInfo.couple.relationship_started_on).getTime()) /
+                            (1000 * 60 * 60 * 24)
+                        )
+                      : '—'}
+                  </p>
                   <p className="text-sm text-gray-600">Дней вместе</p>
                 </div>
                 <div className="text-center p-4 bg-purple-50 rounded-lg">
                   <Heart className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-                  <p className="text-2xl mb-1">∞</p>
+                  <p className="text-2xl mb-1">—</p>
                   <p className="text-sm text-gray-600">Воспоминаний</p>
                 </div>
                 <div className="text-center p-4 bg-red-50 rounded-lg">
                   <Heart className="w-8 h-8 text-red-500 mx-auto mb-2" />
-                  <p className="text-2xl mb-1">∞</p>
+                  <p className="text-2xl mb-1">—</p>
                   <p className="text-sm text-gray-600">Моментов счастья</p>
                 </div>
               </div>
