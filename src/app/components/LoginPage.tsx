@@ -45,18 +45,18 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-red-50 to-purple-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-red-50 to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-purple-950 p-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <div className="relative">
               <Heart className="w-20 h-20 text-red-500 fill-red-500" />
-              <Heart className="w-8 h-8 text-pink-400 fill-pink-400 absolute top-0 right-0 animate-pulse" />
+              <Heart className="w-8 h-8 text-pink-400 dark:text-pink-300 fill-pink-400 dark:fill-pink-300 absolute top-0 right-0 animate-pulse" />
             </div>
           </div>
           <h1 className="text-3xl mb-2">My Love</h1>
-          <p className="text-gray-600">Цифровой сад наших отношений</p>
+          <p className="text-gray-600 dark:text-gray-400">Цифровой сад наших отношений</p>
         </div>
 
         {/* Auth Tabs */}
@@ -78,7 +78,7 @@ export default function LoginPage() {
                   <div className="space-y-2">
                     <Label htmlFor="login-username">Имя пользователя</Label>
                     <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <User className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-gray-400" />
                       <Input
                         id="login-username"
                         type="text"
@@ -94,7 +94,7 @@ export default function LoginPage() {
                   <div className="space-y-2">
                     <Label htmlFor="login-password">Пароль</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-gray-400" />
                       <Input
                         id="login-password"
                         type="password"
@@ -107,7 +107,7 @@ export default function LoginPage() {
                     </div>
                   </div>
 
-                  <Button type="submit" className="w-full bg-red-500 hover:bg-red-600" disabled={isLoading}>
+                  <Button type="submit" className="w-full bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700" disabled={isLoading}>
                     {isLoading ? 'Вход...' : 'Войти'}
                   </Button>
                 </form>
@@ -127,7 +127,7 @@ export default function LoginPage() {
                   <div className="space-y-2">
                     <Label htmlFor="register-username">Имя пользователя *</Label>
                     <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <User className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-gray-400" />
                       <Input
                         id="register-username"
                         type="text"
@@ -138,13 +138,13 @@ export default function LoginPage() {
                         required
                       />
                     </div>
-                    <p className="text-xs text-gray-500">От 3 до 32 символов (a-z, A-Z, 0-9, _, -)</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500">От 3 до 32 символов (a-z, A-Z, 0-9, _, -)</p>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="register-password">Пароль *</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-gray-400" />
                       <Input
                         id="register-password"
                         type="password"
@@ -155,10 +155,10 @@ export default function LoginPage() {
                         required
                       />
                     </div>
-                    <p className="text-xs text-gray-500">Минимум 12 символов, с цифрой, спецсимволом, верхним и нижним регистром</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500">Минимум 12 символов, с цифрой, спецсимволом, верхним и нижним регистром</p>
                   </div>
 
-                  <Button type="submit" className="w-full bg-red-500 hover:bg-red-600" disabled={isLoading}>
+                  <Button type="submit" className="w-full bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700" disabled={isLoading}>
                     {isLoading ? 'Регистрация...' : 'Зарегистрироваться'}
                   </Button>
                 </form>
@@ -168,7 +168,7 @@ export default function LoginPage() {
         </Tabs>
 
         {/* Footer */}
-        <p className="text-center text-sm text-gray-500 mt-6">
+        <p className="text-center text-sm text-gray-500 dark:text-gray-500 mt-6">
           Сделано с ❤️ для одной особенной пары
         </p>
       </div>

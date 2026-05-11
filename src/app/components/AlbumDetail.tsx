@@ -332,8 +332,8 @@ export default function AlbumDetail() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-gray-400 animate-spin mx-auto mb-2" />
-          <p className="text-gray-600">Загрузка альбома...</p>
+          <Loader2 className="w-12 h-12 text-gray-400 dark:text-gray-400 animate-spin mx-auto mb-2" />
+          <p className="text-gray-600 dark:text-gray-400">Загрузка альбома...</p>
         </div>
       </div>
     );
@@ -343,8 +343,8 @@ export default function AlbumDetail() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-          <p className="text-gray-600">Альбом не найден</p>
+          <AlertCircle className="w-12 h-12 text-gray-400 dark:text-gray-400 mx-auto mb-2" />
+          <p className="text-gray-600 dark:text-gray-400">Альбом не найден</p>
           <Button onClick={() => navigate('/media')} className="mt-4">
             Вернуться к галерее
           </Button>
@@ -365,9 +365,9 @@ export default function AlbumDetail() {
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl sm:text-3xl mb-2 break-words">{album.title}</h1>
             {album.description && (
-              <p className="text-gray-600 break-words">{album.description}</p>
+              <p className="text-gray-600 dark:text-gray-400 break-words">{album.description}</p>
             )}
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
               Создано {new Date(album.created_at).toLocaleDateString('ru-RU')}
             </p>
           </div>
@@ -391,7 +391,7 @@ export default function AlbumDetail() {
                   className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
                     isDragOver
                       ? 'border-red-400 bg-red-50'
-                      : 'border-gray-300 hover:border-gray-400'
+                      : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500'
                   }`}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
@@ -406,12 +406,12 @@ export default function AlbumDetail() {
                     multiple
                   />
 
-                  <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400 dark:text-gray-400" />
                   <p className="text-lg mb-2">Перетащите файлы сюда</p>
-                  <p className="text-sm text-gray-500 mb-4">
+                  <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">
                     или нажмите для выбора
                   </p>
-                  <div className="flex justify-center gap-4 text-xs text-gray-400 mb-4">
+                  <div className="flex justify-center gap-4 text-xs text-gray-400 dark:text-gray-400 mb-4">
                     <span>Макс. размер: {formatFileSize(MEDIA_CONFIG.MAX_FILE_SIZE_BYTES)}</span>
                     <span>•</span>
                     <span>
@@ -440,7 +440,7 @@ export default function AlbumDetail() {
             {isOwner && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="outline" className="text-red-500 hover:bg-red-50">
+                  <Button variant="outline" className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30">
                     <Trash2 className="w-4 h-4 mr-2" />
                     Удалить альбом
                   </Button>
@@ -494,9 +494,9 @@ export default function AlbumDetail() {
         {album.items.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <FileImage className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">В этом альбоме пока нет файлов</p>
-              <p className="text-sm text-gray-500 mb-4">
+              <FileImage className="w-16 h-16 text-gray-400 dark:text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600 dark:text-gray-400">В этом альбоме пока нет файлов</p>
+              <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">
                 Загрузите фотографии или видео, чтобы сохранить воспоминания
               </p>
               <Button onClick={() => setUploadDialogOpen(true)} className="bg-red-500 hover:bg-red-600">
@@ -514,7 +514,7 @@ export default function AlbumDetail() {
                   className="group cursor-pointer hover:shadow-lg transition-shadow relative"
                   onClick={() => setSelectedIndex(i)}
                 >
-                  <div className="aspect-square bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center">
+                  <div className="aspect-square bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-950/50 dark:to-purple-950/50 flex items-center justify-center">
                     {file.content_type.startsWith('image/') ? (
                       <img
                         src={fileUrls[file.id] || ''}
@@ -522,14 +522,14 @@ export default function AlbumDetail() {
                         className="w-full h-full object-cover rounded-t-lg"
                       />
                     ) : file.content_type.startsWith('video/') ? (
-                      <Video className="w-16 h-16 text-gray-400" />
+                      <Video className="w-16 h-16 text-gray-400 dark:text-gray-400" />
                     ) : (
-                      <FileImage className="w-16 h-16 text-gray-400" />
+                      <FileImage className="w-16 h-16 text-gray-400 dark:text-gray-400" />
                     )}
                   </div>
                   <CardContent className="p-3">
                     <p className="font-medium truncate">{file.title}</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-gray-500">
                       {new Date(file.created_at).toLocaleDateString()}
                     </p>
                   </CardContent>
@@ -537,10 +537,10 @@ export default function AlbumDetail() {
                   {isOwner && (
                     <button
                       onClick={(e) => openDetachDialog(file, e)}
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white rounded-full p-1.5"
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white dark:bg-gray-800/80 dark:hover:bg-gray-800 rounded-full p-1.5"
                       title="Открепить от альбома"
                     >
-                      <Link2Off className="w-3.5 h-3.5 text-gray-600" />
+                      <Link2Off className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
                     </button>
                   )}
                 </Card>
@@ -639,7 +639,7 @@ function UploadItem({
   const getStatusIcon = () => {
     switch (upload.status) {
       case 'pending':
-        return <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />;
+        return <Loader2 className="w-4 h-4 text-gray-400 dark:text-gray-400 animate-spin" />;
       case 'uploading':
       case 'confirming':
         return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
@@ -657,7 +657,7 @@ function UploadItem({
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-1">
           <p className="text-sm truncate">{upload.fileName}</p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-500 dark:text-gray-500">
             {upload.status === 'completed'
               ? '100%'
               : upload.status === 'error'

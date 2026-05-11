@@ -196,7 +196,7 @@ export default function ProfileSection() {
                 onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
                 required
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 dark:text-gray-500">
                 Минимум 12 символов, upper/lower case, цифра, спецсимвол
               </p>
             </div>

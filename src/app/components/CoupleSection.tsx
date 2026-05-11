@@ -170,13 +170,13 @@ export default function CoupleSection() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'PENDING':
-        return <Badge className="bg-yellow-100 text-yellow-700">Ожидание</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300">Ожидание</Badge>;
       case 'ACCEPTED':
-        return <Badge className="bg-green-100 text-green-700">Принято</Badge>;
+        return <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">Принято</Badge>;
       case 'DECLINED':
-        return <Badge className="bg-gray-100 text-gray-700">Отклонено</Badge>;
+        return <Badge className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Отклонено</Badge>;
       case 'EXPIRED':
-        return <Badge className="bg-red-100 text-red-700">Истекло</Badge>;
+        return <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">Истекло</Badge>;
       default:
         return null;
     }
@@ -187,7 +187,7 @@ export default function CoupleSection() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <Heart className="w-12 h-12 text-gray-400 animate-pulse mx-auto mb-2" />
-          <p className="text-gray-600">Загрузка...</p>
+          <p className="text-gray-600 dark:text-gray-400">Загрузка...</p>
         </div>
       </div>
     );
@@ -198,7 +198,7 @@ export default function CoupleSection() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl mb-1">Моя пара 💑</h1>
-        <p className="text-gray-600">Информация о вашей второй половинке</p>
+        <p className="text-gray-600 dark:text-gray-400">Информация о вашей второй половинке</p>
       </div>
 
       <div className="space-y-6">
@@ -217,15 +217,15 @@ export default function CoupleSection() {
                 </Avatar>
                 <div className="flex-1">
                   <h3 className="text-xl mb-1">@{coupleInfo.couple.partner.username}</h3>
-                  <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                  <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
                       <span>С {new Date(coupleInfo.couple.partner.created_at).toLocaleDateString()}</span>
                     </div>
                     {coupleInfo.couple.partner.is_active ? (
-                      <Badge className="bg-green-100 text-green-700">Активен</Badge>
+                      <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">Активен</Badge>
                     ) : (
-                      <Badge className="bg-gray-100 text-gray-700">Не активен</Badge>
+                      <Badge className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Не активен</Badge>
                     )}
                   </div>
                 </div>
@@ -235,7 +235,7 @@ export default function CoupleSection() {
               <div className="mt-4 pt-4 border-t">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">Дата начала отношений:</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Дата начала отношений:</span>
                     <span className="text-sm font-medium">
                       {coupleInfo.couple.relationship_started_on
                         ? new Date(coupleInfo.couple.relationship_started_on).toLocaleDateString('ru-RU')
@@ -283,7 +283,7 @@ export default function CoupleSection() {
             <CardContent className="py-16 text-center">
               <Heart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg mb-2">У вас пока нет пары</h3>
-              <p className="text-gray-600 mb-4">Отправьте запрос своему партнеру по его имени пользователя</p>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">Отправьте запрос своему партнеру по его имени пользователя</p>
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="bg-red-500 hover:bg-red-600">
@@ -308,7 +308,7 @@ export default function CoupleSection() {
                         onChange={(e) => setPartnerUsername(e.target.value)}
                         required
                       />
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-gray-500">
                         Введите имя пользователя (username) вашего партнера
                       </p>
                     </div>
@@ -380,7 +380,7 @@ export default function CoupleSection() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-pink-50 rounded-lg">
+                <div className="text-center p-4 bg-pink-50 dark:bg-pink-950/30 rounded-lg">
                   <Calendar className="w-8 h-8 text-pink-500 mx-auto mb-2" />
                   <p className="text-2xl mb-1">
                     {coupleInfo.couple.relationship_started_on
@@ -390,17 +390,17 @@ export default function CoupleSection() {
                         )
                       : '—'}
                   </p>
-                  <p className="text-sm text-gray-600">Дней вместе</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Дней вместе</p>
                 </div>
-                <div className="text-center p-4 bg-purple-50 rounded-lg">
+                <div className="text-center p-4 bg-purple-50 dark:bg-purple-950/30 rounded-lg">
                   <Heart className="w-8 h-8 text-purple-500 mx-auto mb-2" />
                   <p className="text-2xl mb-1">—</p>
-                  <p className="text-sm text-gray-600">Воспоминаний</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Воспоминаний</p>
                 </div>
-                <div className="text-center p-4 bg-red-50 rounded-lg">
+                <div className="text-center p-4 bg-red-50 dark:bg-red-950/30 rounded-lg">
                   <Heart className="w-8 h-8 text-red-500 mx-auto mb-2" />
                   <p className="text-2xl mb-1">—</p>
-                  <p className="text-sm text-gray-600">Моментов счастья</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Моментов счастья</p>
                 </div>
               </div>
             </CardContent>

@@ -14,7 +14,7 @@ function AppContent() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-red-50 to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-purple-950">
         <div className="text-center">
           <Heart className="w-16 h-16 text-red-500 animate-pulse mx-auto mb-4" />
-          <p className="text-gray-600">Загрузка...</p>
+          <p className="text-gray-600 dark:text-gray-400">Загрузка...</p>
         </div>
       </div>
     );

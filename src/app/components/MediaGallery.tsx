@@ -168,8 +168,8 @@ export default function MediaGallery() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <ImageIcon className="w-12 h-12 text-gray-400 animate-pulse mx-auto mb-2" />
-          <p className="text-gray-600">Загрузка альбомов...</p>
+          <ImageIcon className="w-12 h-12 text-gray-400 dark:text-gray-400 animate-pulse mx-auto mb-2" />
+          <p className="text-gray-600 dark:text-gray-400">Загрузка альбомов...</p>
         </div>
       </div>
     );
@@ -180,7 +180,7 @@ export default function MediaGallery() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl mb-1">Медиа-галерея 📸</h1>
-          <p className="text-gray-600">Ваши совместные воспоминания</p>
+          <p className="text-gray-600 dark:text-gray-400">Ваши совместные воспоминания</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
@@ -240,7 +240,7 @@ export default function MediaGallery() {
 
       <div className="mb-6">
         <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-400" />
           <Input
             placeholder="Поиск альбомов..."
             value={searchQuery}
@@ -250,7 +250,7 @@ export default function MediaGallery() {
           {searchQuery && (
             <button
               onClick={clearSearch}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400"
             >
               <X className="w-4 h-4" />
             </button>
@@ -261,18 +261,18 @@ export default function MediaGallery() {
       {isSearching ? (
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <Search className="w-12 h-12 text-gray-400 animate-pulse mx-auto mb-2" />
-            <p className="text-gray-600">Поиск...</p>
+            <Search className="w-12 h-12 text-gray-400 dark:text-gray-400 animate-pulse mx-auto mb-2" />
+            <p className="text-gray-600 dark:text-gray-400">Поиск...</p>
           </div>
         </div>
       ) : albums.length === 0 ? (
         <Card>
           <CardContent className="py-16 text-center">
-            <FolderHeart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <FolderHeart className="w-16 h-16 text-gray-400 dark:text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg mb-2">
               {searchQuery ? 'Альбомы не найдены' : 'Пока нет альбомов'}
             </h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
               {searchQuery
                 ? 'Попробуйте изменить запрос'
                 : 'Создайте первый альбом для ваших воспоминаний'}
@@ -295,7 +295,7 @@ export default function MediaGallery() {
               >
                 <CardHeader className="p-0 relative">
                   <div
-                    className="aspect-video bg-gradient-to-br from-pink-200 to-purple-200 rounded-t-lg flex items-center justify-center group-hover:from-pink-300 group-hover:to-purple-300 transition-colors cursor-pointer"
+                    className="aspect-video bg-gradient-to-br from-pink-200 to-purple-200 dark:from-pink-950 dark:to-purple-950 rounded-t-lg flex items-center justify-center group-hover:from-pink-300 group-hover:to-purple-300 transition-colors cursor-pointer"
                     onClick={() => navigate(`/media/album/${album.id}`)}
                   >
                     {album.cover_url ? (
@@ -312,9 +312,9 @@ export default function MediaGallery() {
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <div
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white rounded-full p-1 cursor-pointer"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white dark:bg-gray-800/80 dark:hover:bg-gray-800 rounded-full p-1 cursor-pointer"
                       >
-                        <MoreVertical className="w-4 h-4 text-gray-600" />
+                        <MoreVertical className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                       </div>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -373,7 +373,7 @@ export default function MediaGallery() {
                       {album.description}
                     </CardDescription>
                   )}
-                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                  <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-500">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
                       <span>{new Date(album.created_at).toLocaleDateString()}</span>

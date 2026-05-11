@@ -89,13 +89,13 @@ export default function GamesSection() {
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case 'easy':
-        return 'bg-green-100 text-green-700';
+        return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300';
       case 'medium':
-        return 'bg-yellow-100 text-yellow-700';
+        return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300';
       case 'hard':
-        return 'bg-red-100 text-red-700';
+        return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300';
       default:
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300';
     }
   };
 
@@ -117,7 +117,7 @@ export default function GamesSection() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl mb-1">Мини-игры 🎮</h1>
-        <p className="text-gray-600">Веселые игры для укрепления отношений</p>
+        <p className="text-gray-600 dark:text-gray-400">Веселые игры для укрепления отношений</p>
       </div>
 
       {/* Games Grid */}
@@ -166,7 +166,7 @@ export default function GamesSection() {
                 <>
                   {/* Progress */}
                   <div className="space-y-2">
-                    <div className="flex justify-between text-sm text-gray-600">
+                    <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
                       <span>Вопрос {quizStep + 1} из {quizQuestions.length}</span>
                       <span>Счет: {score}</span>
                     </div>
@@ -181,7 +181,7 @@ export default function GamesSection() {
                         <Button
                           key={index}
                           variant="outline"
-                          className="justify-start h-auto py-3 text-left hover:bg-red-50 hover:border-red-300"
+                          className="justify-start h-auto py-3 text-left hover:bg-red-50 hover:border-red-300 dark:hover:bg-red-950/30 dark:hover:border-red-700"
                           onClick={() => handleQuizAnswer(index)}
                         >
                           {option}
@@ -195,16 +195,16 @@ export default function GamesSection() {
                 <div className="text-center py-8">
                   <Trophy className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
                   <h3 className="text-2xl mb-2">Викторина завершена!</h3>
-                  <p className="text-gray-600 mb-4">
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
                     Ваш результат: {score} из {quizQuestions.length}
                   </p>
                   <div className="mb-6">
                     {score === quizQuestions.length ? (
-                      <p className="text-lg text-green-600">🎉 Идеально! Вы отлично знаете друг друга!</p>
+                      <p className="text-lg text-green-600 dark:text-green-400">🎉 Идеально! Вы отлично знаете друг друга!</p>
                     ) : score >= quizQuestions.length / 2 ? (
-                      <p className="text-lg text-blue-600">👏 Хороший результат! Продолжайте узнавать друг друга</p>
+                      <p className="text-lg text-blue-600 dark:text-blue-400">👏 Хороший результат! Продолжайте узнавать друг друга</p>
                     ) : (
-                      <p className="text-lg text-orange-600">💡 Есть над чем поработать! Проводите больше времени вместе</p>
+                      <p className="text-lg text-orange-600 dark:text-orange-400">💡 Есть над чем поработать! Проводите больше времени вместе</p>
                     )}
                   </div>
                   <Button
@@ -223,15 +223,15 @@ export default function GamesSection() {
 
           {selectedGame?.id === 'puzzle' && (
             <div className="text-center py-8">
-              <Puzzle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">Эта игра находится в разработке 🎯</p>
+              <Puzzle className="w-16 h-16 text-gray-400 dark:text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600 dark:text-gray-400">Эта игра находится в разработке 🎯</p>
             </div>
           )}
 
           {selectedGame?.id === 'associations' && (
             <div className="text-center py-8">
-              <Heart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">Эта игра находится в разработке 🎯</p>
+              <Heart className="w-16 h-16 text-gray-400 dark:text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600 dark:text-gray-400">Эта игра находится в разработке 🎯</p>
             </div>
           )}
         </DialogContent>

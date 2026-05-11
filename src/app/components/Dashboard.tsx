@@ -36,7 +36,7 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
           <Heart className="w-8 h-8 text-red-500 fill-red-500" />
           <div>
             <h2 className="font-semibold">My Love</h2>
-            <p className="text-sm text-gray-500">@{user?.username}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-500">@{user?.username}</p>
           </div>
         </div>
       </div>
@@ -51,7 +51,7 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
                 <Button
                   variant={active ? 'default' : 'ghost'}
                   className={`w-full justify-start ${
-                    active ? 'bg-red-500 hover:bg-red-600' : ''
+                    active ? 'bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700' : ''
                   }`}
                   onClick={() => navigate(item.id)}
                 >
@@ -73,7 +73,7 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
             <Button
               key={item.id}
               variant={active ? 'default' : 'ghost'}
-              className={`w-full justify-start ${active ? 'bg-red-500 hover:bg-red-600' : ''}`}
+              className={`w-full justify-start ${active ? 'bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700' : ''}`}
               onClick={() => navigate(item.id)}
             >
               <Icon className="mr-2 h-4 w-4" />

@@ -57,25 +57,25 @@ const NOTE_TYPES: {
     id: "WISHLIST",
     label: "Вишлисты",
     icon: Gift,
-    color: "bg-pink-100 text-pink-700",
+    color: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300",
   },
   {
     id: "DREAM",
     label: "Мечты",
     icon: MapPin,
-    color: "bg-purple-100 text-purple-700",
+    color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
   },
   {
     id: "GRATITUDE",
     label: "Благодарности",
     icon: Heart,
-    color: "bg-red-100 text-red-700",
+    color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
   },
   {
     id: "MEMORY",
     label: "Воспоминания",
     icon: Star,
-    color: "bg-yellow-100 text-yellow-700",
+    color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
   },
 ];
 
@@ -83,7 +83,7 @@ const ALL_TYPE = {
   id: "ALL" as const,
   label: "Все",
   icon: Layers,
-  color: "bg-gray-100 text-gray-700",
+  color: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300",
 };
 
 const NOTE_TYPE_COLORS: Record<
@@ -91,22 +91,22 @@ const NOTE_TYPE_COLORS: Record<
   { color: string; icon: typeof Gift; label: string }
 > = {
   WISHLIST: {
-    color: "bg-pink-100 text-pink-700",
+    color: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300",
     icon: Gift,
     label: "Вишлисты",
   },
   DREAM: {
-    color: "bg-purple-100 text-purple-700",
+    color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
     icon: MapPin,
     label: "Мечты",
   },
   GRATITUDE: {
-    color: "bg-red-100 text-red-700",
+    color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
     icon: Heart,
     label: "Благодарности",
   },
   MEMORY: {
-    color: "bg-yellow-100 text-yellow-700",
+    color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
     icon: Star,
     label: "Воспоминания",
   },
@@ -218,7 +218,7 @@ export default function NotesSection() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl mb-1">Заметки 📝</h1>
-          <p className="text-gray-600">Ваши мысли, мечты и воспоминания</p>
+          <p className="text-gray-600 dark:text-gray-400">Ваши мысли, мечты и воспоминания</p>
         </div>
         <Dialog
           open={dialogOpen}
@@ -328,12 +328,12 @@ export default function NotesSection() {
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <Card key={i} className="animate-pulse">
                 <CardHeader>
-                  <div className="h-4 bg-gray-200 rounded w-20 mb-2" />
-                  <div className="h-5 bg-gray-200 rounded w-3/4" />
-                  <div className="h-3 bg-gray-200 rounded w-1/4" />
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 mb-2" />
+                  <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/4" />
                 </CardHeader>
                 <CardContent>
-                  <div className="h-3 bg-gray-200 rounded w-full" />
+                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full" />
                 </CardContent>
               </Card>
             ))}
@@ -341,9 +341,9 @@ export default function NotesSection() {
         ) : notes.length === 0 ? (
           <Card>
             <CardContent className="py-16 text-center">
-              <Layers className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <Layers className="w-16 h-16 text-gray-400 dark:text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg mb-2">Нет заметок</h3>
-              <p className="text-gray-600 mb-4">Создайте первую заметку</p>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">Создайте первую заметку</p>
               <Button
                 onClick={() => setDialogOpen(true)}
                 className="bg-red-500 hover:bg-red-600"
@@ -371,7 +371,7 @@ export default function NotesSection() {
                           {typeInfo.label}
                         </Badge>
                         <div className="flex items-center gap-1">
-                          <Sparkles className="w-4 h-4 text-gray-400 group-hover:text-yellow-500 transition-colors" />
+                          <Sparkles className="w-4 h-4 text-gray-400 dark:text-gray-400 group-hover:text-yellow-500 transition-colors" />
                           <Button
                             variant="ghost"
                             size="icon"
@@ -390,7 +390,7 @@ export default function NotesSection() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-gray-700 line-clamp-3">
+                      <p className="text-gray-700 dark:text-gray-300 line-clamp-3">
                         {note.content}
                       </p>
                     </CardContent>
