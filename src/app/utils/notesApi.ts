@@ -42,14 +42,6 @@ export interface NotesWithTotal {
   total: number;
 }
 
-async function getAuthHeaders(): Promise<HeadersInit> {
-  const token = localStorage.getItem("access_token");
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  };
-}
-
 export async function getNotes(
   type?: NoteType | null,
   offset: number = 0,
@@ -63,7 +55,6 @@ export async function getNotes(
 
   const response = await authenticatedFetch(url, {
     method: "GET",
-    headers: await getAuthHeaders(),
   });
 
   if (!response.ok) {
@@ -81,7 +72,6 @@ export async function createNote(
 ): Promise<void> {
   const response = await authenticatedFetch(`${API_URL}/v1/notes`, {
     method: "POST",
-    headers: await getAuthHeaders(),
     body: JSON.stringify(request),
   });
 
@@ -98,7 +88,6 @@ export async function updateNote(
 ): Promise<void> {
   const response = await authenticatedFetch(`${API_URL}/v1/notes/${noteId}`, {
     method: "PATCH",
-    headers: await getAuthHeaders(),
     body: JSON.stringify(request),
   });
 
@@ -114,7 +103,6 @@ export async function deleteNote(
 ): Promise<void> {
   const response = await authenticatedFetch(`${API_URL}/v1/notes/${noteId}`, {
     method: "DELETE",
-    headers: await getAuthHeaders(),
   });
 
   if (!response.ok) {

@@ -87,13 +87,10 @@ export function useFileUpload(
     title: string,
     description?: string,
   ): Promise<{ file_id: string; presigned_url: string }> => {
-    const token = localStorage.getItem("access_token");
     const idempotencyKey = generateIdempotencyKey();
     const response = await fetchWithAuth(`${API_URL}/v1/media/files/upload`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
         "Idempotency-Key": idempotencyKey,
       },
       body: JSON.stringify({
@@ -129,14 +126,11 @@ export function useFileUpload(
     }>;
     failed: UploadBatchFailedItem[];
   }> => {
-    const token = localStorage.getItem("access_token");
     const idempotencyKey = generateIdempotencyKey();
 
     const response = await fetchWithAuth(`${API_URL}/v1/media/files/upload/batch`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
         "Idempotency-Key": idempotencyKey,
       },
       body: JSON.stringify({ files_metadata: filesMetadata }),
@@ -193,15 +187,12 @@ export function useFileUpload(
   };
 
   const confirmUpload = async (fileId: string): Promise<void> => {
-    const token = localStorage.getItem("access_token");
     const idempotencyKey = generateIdempotencyKey();
     const response = await fetchWithAuth(
       `${API_URL}/v1/media/files/upload/confirm`,
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
           "Idempotency-Key": idempotencyKey,
         },
         body: JSON.stringify({ file_id: fileId }),

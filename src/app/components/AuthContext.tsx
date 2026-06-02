@@ -1,5 +1,7 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { API_URL } from '../constants/api';
 
 interface User {
   id: string;
@@ -16,243 +18,127 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<void>;
   register: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  refreshToken: () => Promise<void>;
   authenticatedFetch: (url: string, options?: RequestInit) => Promise<Response>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-import { API_URL } from '../constants/api';
-
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const refreshPromiseRef = useRef<Promise<void> | null>(null);
+  const unauthorizedHandledRef = useRef(false);
 
-  // Проверка токена при загрузке
-  useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      // Попытка получить информацию о пользователе
-      fetchUserInfo();
-    } else {
+  const handleUnauthorized = useCallback(() => {
+    if (unauthorizedHandledRef.current) {
+      return;
+    }
+    unauthorizedHandledRef.current = true;
+    setUser(null);
+    toast.error('Сессия истекла, войдите снова');
+    navigate('/login', { replace: true });
+  }, [navigate]);
+
+  const checkSession = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_URL}/v1/users/me`, {
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+        unauthorizedHandledRef.current = false;
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('Error checking session:', error);
+      setUser(null);
+    } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const fetchUserInfo = async () => {
-    try {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
-
-      const response = await fetch(`${API_URL}/v1/users/me`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const userData = await response.json();
-        // API возвращает { user: UserDTO }
-        setUser(userData.user);
-      } else if (response.status === 401) {
-        // Попытка обновить токен при 401 ошибке
-        try {
-          await refreshToken();
-          // Повторный запрос после обновления токена
-          const newToken = localStorage.getItem('access_token');
-          if (newToken) {
-            const retryResponse = await fetch(`${API_URL}/v1/users/me`, {
-              headers: {
-                'Authorization': `Bearer ${newToken}`,
-              },
-            });
-            if (retryResponse.ok) {
-              const userData = await retryResponse.json();
-              setUser(userData.user);
-            } else {
-              // Если повторный запрос тоже не удался, очищаем токены
-              localStorage.removeItem('access_token');
-              localStorage.removeItem('refresh_token');
-              setUser(null);
-            }
-          }
-        } catch (refreshError) {
-          // Если обновление токена не удалось, очищаем токены
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          setUser(null);
-        }
-      } else {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        setUser(null);
-      }
-    } catch (error) {
-      console.error('Error fetching user info:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  useEffect(() => {
+    checkSession();
+  }, [checkSession]);
 
   const login = async (username: string, password: string) => {
-    try {
-      const formData = new URLSearchParams();
-      formData.append('username', username);
-      formData.append('password', password);
+    const formData = new URLSearchParams();
+    formData.append('username', username);
+    formData.append('password', password);
 
-      const response = await fetch(`${API_URL}/v1/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: formData,
-      });
+    const response = await fetch(`${API_URL}/v1/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData,
+      credentials: 'include',
+    });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Ошибка входа');
-      }
-
-      const data = await response.json();
-      localStorage.setItem('access_token', data.access_token);
-      localStorage.setItem('refresh_token', data.refresh_token);
-
-      await fetchUserInfo();
-      toast.success('Добро пожаловать! 💖');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Ошибка входа');
-      throw error;
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Ошибка входа');
     }
+
+    const data = await response.json();
+    setUser(data.user);
+    unauthorizedHandledRef.current = false;
+    toast.success('Добро пожаловать! 💖');
   };
 
   const register = async (username: string, password: string) => {
-    try {
-      const response = await fetch(`${API_URL}/v1/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
+    const response = await fetch(`${API_URL}/v1/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, password }),
+      credentials: 'include',
+    });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Ошибка регистрации');
-      }
-
-      toast.success('Регистрация успешна! Теперь войдите в систему.');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Ошибка регистрации');
-      throw error;
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Ошибка регистрации');
     }
+
+    toast.success('Регистрация успешна! Теперь войдите в систему.');
   };
 
   const logout = async () => {
     try {
-      const token = localStorage.getItem('access_token');
       await fetch(`${API_URL}/v1/auth/logout`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
       setUser(null);
+      unauthorizedHandledRef.current = false;
       toast.success('До скорой встречи! 👋');
     }
   };
 
-  const refreshToken = async () => {
-    // Предотвращаем одновременные попытки обновления токена
-    if (refreshPromiseRef.current) {
-      return refreshPromiseRef.current;
-    }
-
-    const refreshPromise = (async () => {
-      try {
-        const refresh = localStorage.getItem('refresh_token');
-        if (!refresh) {
-          throw new Error('No refresh token available');
-        }
-
-        const response = await fetch(`${API_URL}/v1/auth/refresh`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${refresh}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          localStorage.setItem('access_token', data.access_token);
-          // Если API возвращает новый refresh_token, обновляем его тоже
-          if (data.refresh_token) {
-            localStorage.setItem('refresh_token', data.refresh_token);
-          }
-        } else {
-          throw new Error('Token refresh failed');
-        }
-      } catch (error) {
-        // Очищаем токены при ошибке обновления
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        setUser(null);
-        throw error;
-      } finally {
-        refreshPromiseRef.current = null;
-      }
-    })();
-
-    refreshPromiseRef.current = refreshPromise;
-    return refreshPromise;
-  };
-
-  // Обертка для fetch запросов с автоматическим обновлением токена
-  const authenticatedFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
-    const token = localStorage.getItem('access_token');
-
-    // Добавляем токен в заголовки, если его там нет
+  const authenticatedFetch = async (
+    url: string,
+    options: RequestInit = {},
+  ): Promise<Response> => {
     const headers = new Headers(options.headers);
-    if (token && !headers.has('Authorization')) {
-      headers.set('Authorization', `Bearer ${token}`);
+    if (options.body && !headers.has('Content-Type') && !(options.body instanceof FormData)) {
+      headers.set('Content-Type', 'application/json');
     }
 
-    let response = await fetch(url, {
+    const response = await fetch(url, {
       ...options,
       headers,
+      credentials: 'include',
     });
 
-    // Если получили 401, пытаемся обновить токен и повторить запрос
     if (response.status === 401) {
-      try {
-        await refreshToken();
-        const newToken = localStorage.getItem('access_token');
-
-        if (newToken) {
-          // Обновляем заголовок с новым токеном
-          headers.set('Authorization', `Bearer ${newToken}`);
-
-          // Повторяем запрос с новым токеном
-          response = await fetch(url, {
-            ...options,
-            headers,
-          });
-        } else {
-          // Если токен не был обновлен, выбрасываем ошибку
-          throw new Error('Failed to refresh token');
-        }
-      } catch (error) {
-        // Если обновление токена не удалось, возвращаем исходный ответ
-        return response;
-      }
+      handleUnauthorized();
     }
 
     return response;
@@ -267,7 +153,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         logout,
-        refreshToken,
         authenticatedFetch,
       }}
     >
