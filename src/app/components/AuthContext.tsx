@@ -26,43 +26,132 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(
+    () => localStorage.getItem('ml_at'),
+  );
   const [isLoading, setIsLoading] = useState(true);
   const unauthorizedHandledRef = useRef(false);
+  const isRefreshing = useRef(false);
+  const failedQueue = useRef<Array<{
+    resolve: (token: string) => void;
+    reject: (error: unknown) => void;
+  }>>([]);
+
+  const saveToken = useCallback((token: string | null) => {
+    if (token) {
+      localStorage.setItem('ml_at', token);
+    } else {
+      localStorage.removeItem('ml_at');
+    }
+    setAccessToken(token);
+  }, []);
+
+  const processQueue = useCallback((error: unknown, token: string | null = null) => {
+    failedQueue.current.forEach(({ resolve, reject }) => {
+      if (error) {
+        reject(error);
+      } else if (token) {
+        resolve(token);
+      }
+    });
+    failedQueue.current = [];
+  }, []);
+
+  const refreshAccessToken = useCallback(async (): Promise<string | null> => {
+    if (isRefreshing.current) {
+      return new Promise<string>((resolve, reject) => {
+        failedQueue.current.push({ resolve, reject });
+      });
+    }
+
+    isRefreshing.current = true;
+
+    try {
+      const response = await fetch(`${API_URL}/v1/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        saveToken(data.access_token);
+        processQueue(null, data.access_token);
+        return data.access_token;
+      } else {
+        saveToken(null);
+        processQueue(new Error('Refresh failed'));
+        return null;
+      }
+    } catch (error) {
+      saveToken(null);
+      processQueue(error);
+      return null;
+    } finally {
+      isRefreshing.current = false;
+    }
+  }, [saveToken, processQueue]);
 
   const handleUnauthorized = useCallback(() => {
     if (unauthorizedHandledRef.current) {
       return;
     }
     unauthorizedHandledRef.current = true;
+    saveToken(null);
     setUser(null);
     toast.error('Сессия истекла, войдите снова');
     navigate('/login', { replace: true });
-  }, [navigate]);
-
-  const checkSession = useCallback(async () => {
-    try {
-      const response = await fetch(`${API_URL}/v1/users/me`, {
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
-        unauthorizedHandledRef.current = false;
-      } else {
-        setUser(null);
-      }
-    } catch (error) {
-      console.error('Error checking session:', error);
-      setUser(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  }, [navigate, saveToken]);
 
   useEffect(() => {
-    checkSession();
-  }, [checkSession]);
+    const initSession = async () => {
+      let token = localStorage.getItem('ml_at');
+
+      if (!token) {
+        token = await refreshAccessToken();
+        if (!token) {
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/v1/users/me`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+          unauthorizedHandledRef.current = false;
+        } else if (response.status === 401) {
+          const newToken = await refreshAccessToken();
+          if (newToken) {
+            const retryResponse = await fetch(`${API_URL}/v1/users/me`, {
+              headers: { 'Authorization': `Bearer ${newToken}` },
+              credentials: 'include',
+            });
+            if (retryResponse.ok) {
+              const data = await retryResponse.json();
+              setUser(data.user);
+              unauthorizedHandledRef.current = false;
+            }
+          } else {
+            setUser(null);
+          }
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Error checking session:', error);
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initSession();
+  }, [refreshAccessToken]);
 
   const login = async (username: string, password: string) => {
     const formData = new URLSearchParams();
@@ -84,7 +173,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const data = await response.json();
-    setUser(data.user);
+    const token = data.access_token;
+    saveToken(token);
+
+    const userResponse = await fetch(`${API_URL}/v1/users/me`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+      credentials: 'include',
+    });
+
+    if (userResponse.ok) {
+      const userData = await userResponse.json();
+      setUser(userData.user);
+    } else {
+      saveToken(null);
+      throw new Error('Не удалось получить данные пользователя');
+    }
+
     unauthorizedHandledRef.current = false;
     toast.success('Добро пожаловать! 💖');
   };
@@ -111,38 +215,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await fetch(`${API_URL}/v1/auth/logout`, {
         method: 'POST',
+        headers: accessToken ? { 'Authorization': `Bearer ${accessToken}` } : undefined,
         credentials: 'include',
       });
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
+      saveToken(null);
       setUser(null);
       unauthorizedHandledRef.current = false;
       toast.success('До скорой встречи! 👋');
     }
   };
 
-  const authenticatedFetch = async (
+  const authenticatedFetch = useCallback(async (
     url: string,
     options: RequestInit = {},
   ): Promise<Response> => {
     const headers = new Headers(options.headers);
+    if (accessToken) {
+      headers.set('Authorization', `Bearer ${accessToken}`);
+    }
     if (options.body && !headers.has('Content-Type') && !(options.body instanceof FormData)) {
       headers.set('Content-Type', 'application/json');
     }
 
-    const response = await fetch(url, {
+    let response = await fetch(url, {
       ...options,
       headers,
       credentials: 'include',
     });
 
-    if (response.status === 401) {
-      handleUnauthorized();
+    if (response.status === 401 && accessToken) {
+      const newToken = await refreshAccessToken();
+      if (newToken) {
+        headers.set('Authorization', `Bearer ${newToken}`);
+        response = await fetch(url, {
+          ...options,
+          headers,
+          credentials: 'include',
+        });
+      } else {
+        handleUnauthorized();
+      }
     }
 
     return response;
-  };
+  }, [accessToken, refreshAccessToken, handleUnauthorized]);
 
   return (
     <AuthContext.Provider
