@@ -213,9 +213,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
+      const token = localStorage.getItem('ml_at');
       await fetch(`${API_URL}/v1/auth/logout`, {
         method: 'POST',
-        headers: accessToken ? { 'Authorization': `Bearer ${accessToken}` } : undefined,
+        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
         credentials: 'include',
       });
     } catch (error) {
@@ -233,8 +234,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     options: RequestInit = {},
   ): Promise<Response> => {
     const headers = new Headers(options.headers);
-    if (accessToken) {
-      headers.set('Authorization', `Bearer ${accessToken}`);
+    const token = localStorage.getItem('ml_at');
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
     }
     if (options.body && !headers.has('Content-Type') && !(options.body instanceof FormData)) {
       headers.set('Content-Type', 'application/json');
@@ -246,7 +248,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       credentials: 'include',
     });
 
-    if (response.status === 401 && accessToken) {
+    if (response.status === 401) {
       const newToken = await refreshAccessToken();
       if (newToken) {
         headers.set('Authorization', `Bearer ${newToken}`);
@@ -261,7 +263,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     return response;
-  }, [accessToken, refreshAccessToken, handleUnauthorized]);
+  }, [refreshAccessToken, handleUnauthorized]);
 
   return (
     <AuthContext.Provider
