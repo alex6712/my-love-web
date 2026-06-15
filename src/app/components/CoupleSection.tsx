@@ -91,7 +91,8 @@ export default function CoupleSection() {
   useEffect(() => {
     fetchPartnerInfo();
     fetchRequests();
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const sendRequest = async (e: React.FormEvent) => {
     e.preventDefault();

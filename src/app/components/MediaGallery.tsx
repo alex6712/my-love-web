@@ -70,7 +70,8 @@ export default function MediaGallery() {
 
   useEffect(() => {
     loadAlbums(0);
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (searchQuery.trim()) {
