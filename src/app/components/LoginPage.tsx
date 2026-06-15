@@ -26,7 +26,8 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await login(loginData.username, loginData.password);
-    } catch (error) {
+    } catch {
+      /* empty */
     } finally {
       setIsLoading(false);
     }
@@ -38,7 +39,8 @@ export default function LoginPage() {
     try {
       await register(registerData.username, registerData.password);
       setRegisterData({ username: '', password: '' });
-    } catch (error) {
+    } catch {
+      /* empty */
     } finally {
       setIsLoading(false);
     }
@@ -107,7 +109,11 @@ export default function LoginPage() {
                     </div>
                   </div>
 
-                  <Button type="submit" className="w-full bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700" disabled={isLoading}>
+                  <Button
+                    type="submit"
+                    className="w-full bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
+                    disabled={isLoading}
+                  >
                     {isLoading ? 'Вход...' : 'Войти'}
                   </Button>
                 </form>
@@ -134,11 +140,15 @@ export default function LoginPage() {
                         placeholder="username"
                         className="pl-10"
                         value={registerData.username}
-                        onChange={(e) => setRegisterData({ ...registerData, username: e.target.value })}
+                        onChange={(e) =>
+                          setRegisterData({ ...registerData, username: e.target.value })
+                        }
                         required
                       />
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-500">От 3 до 32 символов (a-z, A-Z, 0-9, _, -)</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500">
+                      От 3 до 32 символов (a-z, A-Z, 0-9, _, -)
+                    </p>
                   </div>
 
                   <div className="space-y-2">
@@ -151,14 +161,22 @@ export default function LoginPage() {
                         placeholder="••••••••"
                         className="pl-10"
                         value={registerData.password}
-                        onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
+                        onChange={(e) =>
+                          setRegisterData({ ...registerData, password: e.target.value })
+                        }
                         required
                       />
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-500">Минимум 12 символов, с цифрой, спецсимволом, верхним и нижним регистром</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500">
+                      Минимум 12 символов, с цифрой, спецсимволом, верхним и нижним регистром
+                    </p>
                   </div>
 
-                  <Button type="submit" className="w-full bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700" disabled={isLoading}>
+                  <Button
+                    type="submit"
+                    className="w-full bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
+                    disabled={isLoading}
+                  >
                     {isLoading ? 'Регистрация...' : 'Зарегистрироваться'}
                   </Button>
                 </form>

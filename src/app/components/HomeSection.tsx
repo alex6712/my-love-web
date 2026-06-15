@@ -50,7 +50,9 @@ export default function HomeSection() {
       {/* Welcome Header */}
       <div className="mb-8 text-center">
         <h1 className="text-3xl mb-2">Привет, @{user?.username}! 💖</h1>
-        <p className="text-gray-600 dark:text-gray-400">Добро пожаловать в ваш цифровой сад воспоминаний</p>
+        <p className="text-gray-600 dark:text-gray-400">
+          Добро пожаловать в ваш цифровой сад воспоминаний
+        </p>
       </div>
 
       {/* Stats Grid */}
@@ -58,7 +60,10 @@ export default function HomeSection() {
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <Card key={index} className="hover:shadow-lg dark:hover:shadow-[0_4px_24px_rgba(255,255,255,0.06)] transition-shadow">
+            <Card
+              key={index}
+              className="hover:shadow-lg dark:hover:shadow-[0_4px_24px_rgba(255,255,255,0.06)] transition-shadow"
+            >
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -103,7 +108,10 @@ export default function HomeSection() {
             ].map((activity, index) => {
               const Icon = activity.icon;
               return (
-                <div key={index} className="flex items-start gap-4 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                <div
+                  key={index}
+                  className="flex items-start gap-4 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                >
                   <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
                     <Icon className="w-5 h-5 text-red-500" />
                   </div>

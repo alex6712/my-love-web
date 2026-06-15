@@ -1,4 +1,12 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  ReactNode,
+  useRef,
+} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { API_URL } from '../constants/api';
@@ -26,16 +34,16 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(
-    () => localStorage.getItem('ml_at'),
-  );
+  const [, setAccessToken] = useState<string | null>(() => localStorage.getItem('ml_at'));
   const [isLoading, setIsLoading] = useState(true);
   const unauthorizedHandledRef = useRef(false);
   const isRefreshing = useRef(false);
-  const failedQueue = useRef<Array<{
-    resolve: (token: string) => void;
-    reject: (error: unknown) => void;
-  }>>([]);
+  const failedQueue = useRef<
+    Array<{
+      resolve: (token: string) => void;
+      reject: (error: unknown) => void;
+    }>
+  >([]);
 
   const saveToken = useCallback((token: string | null) => {
     if (token) {
@@ -116,7 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       try {
         const response = await fetch(`${API_URL}/v1/users/me`, {
-          headers: { 'Authorization': `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${token}` },
           credentials: 'include',
         });
 
@@ -128,7 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const newToken = await refreshAccessToken();
           if (newToken) {
             const retryResponse = await fetch(`${API_URL}/v1/users/me`, {
-              headers: { 'Authorization': `Bearer ${newToken}` },
+              headers: { Authorization: `Bearer ${newToken}` },
               credentials: 'include',
             });
             if (retryResponse.ok) {
@@ -177,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     saveToken(token);
 
     const userResponse = await fetch(`${API_URL}/v1/users/me`, {
-      headers: { 'Authorization': `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}` },
       credentials: 'include',
     });
 
@@ -216,7 +224,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const token = localStorage.getItem('ml_at');
       await fetch(`${API_URL}/v1/auth/logout`, {
         method: 'POST',
-        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         credentials: 'include',
       });
     } catch (error) {
@@ -229,41 +237,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const authenticatedFetch = useCallback(async (
-    url: string,
-    options: RequestInit = {},
-  ): Promise<Response> => {
-    const headers = new Headers(options.headers);
-    const token = localStorage.getItem('ml_at');
-    if (token) {
-      headers.set('Authorization', `Bearer ${token}`);
-    }
-    if (options.body && !headers.has('Content-Type') && !(options.body instanceof FormData)) {
-      headers.set('Content-Type', 'application/json');
-    }
-
-    let response = await fetch(url, {
-      ...options,
-      headers,
-      credentials: 'include',
-    });
-
-    if (response.status === 401) {
-      const newToken = await refreshAccessToken();
-      if (newToken) {
-        headers.set('Authorization', `Bearer ${newToken}`);
-        response = await fetch(url, {
-          ...options,
-          headers,
-          credentials: 'include',
-        });
-      } else {
-        handleUnauthorized();
+  const authenticatedFetch = useCallback(
+    async (url: string, options: RequestInit = {}): Promise<Response> => {
+      const headers = new Headers(options.headers);
+      const token = localStorage.getItem('ml_at');
+      if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
       }
-    }
+      if (options.body && !headers.has('Content-Type') && !(options.body instanceof FormData)) {
+        headers.set('Content-Type', 'application/json');
+      }
 
-    return response;
-  }, [refreshAccessToken, handleUnauthorized]);
+      let response = await fetch(url, {
+        ...options,
+        headers,
+        credentials: 'include',
+      });
+
+      if (response.status === 401) {
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+          headers.set('Authorization', `Bearer ${newToken}`);
+          response = await fetch(url, {
+            ...options,
+            headers,
+            credentials: 'include',
+          });
+        } else {
+          handleUnauthorized();
+        }
+      }
+
+      return response;
+    },
+    [refreshAccessToken, handleUnauthorized],
+  );
 
   return (
     <AuthContext.Provider
@@ -282,6 +290,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

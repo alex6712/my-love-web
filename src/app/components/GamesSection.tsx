@@ -127,7 +127,9 @@ export default function GamesSection() {
           return (
             <Card key={game.id} className="hover:shadow-lg transition-shadow group">
               <CardHeader>
-                <div className={`w-full h-32 rounded-lg bg-gradient-to-br ${game.color} flex items-center justify-center mb-4 group-hover:scale-105 transition-transform`}>
+                <div
+                  className={`w-full h-32 rounded-lg bg-gradient-to-br ${game.color} flex items-center justify-center mb-4 group-hover:scale-105 transition-transform`}
+                >
                   <Icon className="w-16 h-16 text-white" />
                 </div>
                 <div className="flex items-center justify-between mb-2">
@@ -167,7 +169,9 @@ export default function GamesSection() {
                   {/* Progress */}
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                      <span>Вопрос {quizStep + 1} из {quizQuestions.length}</span>
+                      <span>
+                        Вопрос {quizStep + 1} из {quizQuestions.length}
+                      </span>
                       <span>Счет: {score}</span>
                     </div>
                     <Progress value={((quizStep + 1) / quizQuestions.length) * 100} />
@@ -200,11 +204,17 @@ export default function GamesSection() {
                   </p>
                   <div className="mb-6">
                     {score === quizQuestions.length ? (
-                      <p className="text-lg text-green-600 dark:text-green-400">🎉 Идеально! Вы отлично знаете друг друга!</p>
+                      <p className="text-lg text-green-600 dark:text-green-400">
+                        🎉 Идеально! Вы отлично знаете друг друга!
+                      </p>
                     ) : score >= quizQuestions.length / 2 ? (
-                      <p className="text-lg text-blue-600 dark:text-blue-400">👏 Хороший результат! Продолжайте узнавать друг друга</p>
+                      <p className="text-lg text-blue-600 dark:text-blue-400">
+                        👏 Хороший результат! Продолжайте узнавать друг друга
+                      </p>
                     ) : (
-                      <p className="text-lg text-orange-600 dark:text-orange-400">💡 Есть над чем поработать! Проводите больше времени вместе</p>
+                      <p className="text-lg text-orange-600 dark:text-orange-400">
+                        💡 Есть над чем поработать! Проводите больше времени вместе
+                      </p>
                     )}
                   </div>
                   <Button

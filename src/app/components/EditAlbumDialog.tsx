@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from 'react';
 import { Settings2 } from 'lucide-react';
@@ -48,15 +48,19 @@ export function EditAlbumDialog({ album, onAlbumUpdated, children }: EditAlbumDi
     setIsLoading(true);
 
     try {
-      const updatedAlbum = await updateAlbum(album.id, {
-        title: title !== album.title ? title : undefined,
-        description: description !== (album.description || '') ? description : undefined,
-        is_private: isPrivate,
-      }, authenticatedFetch);
+      const updatedAlbum = await updateAlbum(
+        album.id,
+        {
+          title: title !== album.title ? title : undefined,
+          description: description !== (album.description || '') ? description : undefined,
+          is_private: isPrivate,
+        },
+        authenticatedFetch,
+      );
       onAlbumUpdated(updatedAlbum);
       setOpen(false);
       toast.success('Альбом обновлён');
-    } catch (error) {
+    } catch {
       toast.error('Не удалось обновить альбом');
     } finally {
       setIsLoading(false);

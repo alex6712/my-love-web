@@ -1,14 +1,9 @@
 export const MEDIA_CONFIG = {
   MAX_FILE_SIZE_BYTES: 500 * 1024 * 1024,
-  SUPPORTED_TYPES: [
-    'image/jpeg',
-    'image/png',
-    'video/mp4',
-    'video/quicktime',
-  ] as const,
+  SUPPORTED_TYPES: ['image/jpeg', 'image/png', 'video/mp4', 'video/quicktime'] as const,
 } as const;
 
-export type SupportedMediaType = typeof MEDIA_CONFIG.SUPPORTED_TYPES[number];
+export type SupportedMediaType = (typeof MEDIA_CONFIG.SUPPORTED_TYPES)[number];
 
 export function isSupportedType(mimeType: string): mimeType is SupportedMediaType {
   return MEDIA_CONFIG.SUPPORTED_TYPES.includes(mimeType as SupportedMediaType);

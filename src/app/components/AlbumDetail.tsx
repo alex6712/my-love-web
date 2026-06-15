@@ -12,16 +12,11 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  ExternalLink,
-  Link2,
   Link2Off,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Progress } from './ui/progress';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -86,7 +81,7 @@ export default function AlbumDetail() {
   const { albumId } = useParams<{ albumId: string }>();
   const navigate = useNavigate();
   const { user, authenticatedFetch } = useAuth();
-  const { uploads, uploadFiles, removeUpload, clearCompleted, isUploading } = useFileUpload({
+  const { uploads, uploadFiles, removeUpload, clearCompleted } = useFileUpload({
     authenticatedFetch,
   });
 
@@ -105,12 +100,16 @@ export default function AlbumDetail() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const albumRef = useRef<AlbumWithItemsDTO | null>(null);
   const fileUrlsRef = useRef<Record<string, string>>({});
-  const fetchAlbumRef = useRef<((pageNum?: number, append?: boolean) => Promise<void>) | null>(null);
+  const fetchAlbumRef = useRef<((pageNum?: number, append?: boolean) => Promise<void>) | null>(
+    null,
+  );
 
   const limit = 20;
-  const selectedFile = selectedIndex !== null && album ? album.items[selectedIndex] ?? null : null;
+  const selectedFile =
+    selectedIndex !== null && album ? (album.items[selectedIndex] ?? null) : null;
   const canGoPrev = selectedIndex !== null && selectedIndex > 0;
-  const canGoNext = selectedIndex !== null && album ? selectedIndex < album.items.length - 1 : false;
+  const canGoNext =
+    selectedIndex !== null && album ? selectedIndex < album.items.length - 1 : false;
 
   const closePreview = useCallback(() => {
     setSelectedIndex(null);
@@ -130,77 +129,83 @@ export default function AlbumDetail() {
     });
   }, [album]);
 
-  const fetchAlbumFn = useCallback(async (pageNum: number = 0, append: boolean = false) => {
-    if (!albumId) return;
+  const fetchAlbumFn = useCallback(
+    async (pageNum: number = 0, append: boolean = false) => {
+      if (!albumId) return;
 
-    if (pageNum === 0) {
-      setIsLoading(true);
-    } else {
-      setIsLoadingMore(true);
-    }
-
-    try {
-      const response = await authenticatedFetch(`${API_URL}/v1/media/albums/${albumId}?offset=${pageNum * limit}&limit=${limit}`);
-
-      if (!response.ok) {
-        throw new Error('Album not found');
-      }
-
-      const data = await response.json();
-      const currentAlbum = albumRef.current;
-
-      if (append && currentAlbum) {
-        const newItems = [...currentAlbum.items, ...data.album.items];
-        const updatedAlbum = { ...data.album, items: newItems, total: data.album.total };
-        setAlbum(updatedAlbum);
-        albumRef.current = updatedAlbum;
+      if (pageNum === 0) {
+        setIsLoading(true);
       } else {
-        setAlbum(data.album);
-        albumRef.current = data.album;
+        setIsLoadingMore(true);
       }
 
-      const urls: Record<string, string> = {};
-      const itemsToFetch = append && currentAlbum ? [...currentAlbum.items, ...data.album.items] : data.album.items;
-      const currentFileUrls = fileUrlsRef.current;
-      const missingItems = itemsToFetch.filter(
-        (item) =>
-          (item.content_type.startsWith('image/') || item.content_type.startsWith('video/')) &&
-          !currentFileUrls[item.id],
-      );
+      try {
+        const response = await authenticatedFetch(
+          `${API_URL}/v1/media/albums/${albumId}?offset=${pageNum * limit}&limit=${limit}`,
+        );
 
-      if (missingItems.length > 0) {
-        try {
-          const downloadResult = await getDownloadPresignedUrls(
-            missingItems.map((item) => item.id),
-            authenticatedFetch,
-          );
-
-          Object.assign(urls, downloadResult.successful);
-
-          downloadResult.failed.forEach((failedItem) => {
-            toast.error(`Не удалось получить ссылку для одного из файлов`);
-          });
-        } catch (error) {
-          console.error('Failed to get download URLs:', error);
+        if (!response.ok) {
+          throw new Error('Album not found');
         }
-      }
 
-      if (Object.keys(urls).length > 0) {
-        fileUrlsRef.current = { ...currentFileUrls, ...urls };
-        setFileUrls(fileUrlsRef.current);
-      }
+        const data = await response.json();
+        const currentAlbum = albumRef.current;
 
-      setHasMore(data.album.items.length >= limit);
-      setPage(pageNum);
-    } catch (error) {
-      console.error('Error fetching album:', error);
-      toast.error('Не удалось загрузить альбом');
-      navigate('/media');
-    } finally {
-      setIsLoading(false);
-      setIsLoadingMore(false);
-    }
-  }, [albumId, navigate, authenticatedFetch, limit]);
+        if (append && currentAlbum) {
+          const newItems = [...currentAlbum.items, ...data.album.items];
+          const updatedAlbum = { ...data.album, items: newItems, total: data.album.total };
+          setAlbum(updatedAlbum);
+          albumRef.current = updatedAlbum;
+        } else {
+          setAlbum(data.album);
+          albumRef.current = data.album;
+        }
+
+        const urls: Record<string, string> = {};
+        const itemsToFetch =
+          append && currentAlbum ? [...currentAlbum.items, ...data.album.items] : data.album.items;
+        const currentFileUrls = fileUrlsRef.current;
+        const missingItems = (itemsToFetch as FileDTO[]).filter(
+          (item) =>
+            (item.content_type.startsWith('image/') || item.content_type.startsWith('video/')) &&
+            !currentFileUrls[item.id],
+        );
+
+        if (missingItems.length > 0) {
+          try {
+            const downloadResult = await getDownloadPresignedUrls(
+              missingItems.map((item) => item.id),
+              authenticatedFetch,
+            );
+
+            Object.assign(urls, downloadResult.successful);
+
+            downloadResult.failed.forEach(() => {
+              toast.error(`Не удалось получить ссылку для одного из файлов`);
+            });
+          } catch (error) {
+            console.error('Failed to get download URLs:', error);
+          }
+        }
+
+        if (Object.keys(urls).length > 0) {
+          fileUrlsRef.current = { ...currentFileUrls, ...urls };
+          setFileUrls(fileUrlsRef.current);
+        }
+
+        setHasMore(data.album.items.length >= limit);
+        setPage(pageNum);
+      } catch (error) {
+        console.error('Error fetching album:', error);
+        toast.error('Не удалось загрузить альбом');
+        navigate('/media');
+      } finally {
+        setIsLoading(false);
+        setIsLoadingMore(false);
+      }
+    },
+    [albumId, navigate, authenticatedFetch, limit],
+  );
 
   const loadMore = () => {
     fetchAlbumFn(page + 1, true);
@@ -383,9 +388,7 @@ export default function AlbumDetail() {
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>Загрузить файлы</DialogTitle>
-                  <DialogDescription>
-                    Перетащите файлы или нажмите для выбора
-                  </DialogDescription>
+                  <DialogDescription>Перетащите файлы или нажмите для выбора</DialogDescription>
                 </DialogHeader>
                 <div
                   className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
@@ -435,12 +438,18 @@ export default function AlbumDetail() {
               </DialogContent>
             </Dialog>
 
-            <EditAlbumDialog album={album as AlbumWithItemsDTO & AlbumDTO} onAlbumUpdated={handleAlbumUpdated} />
+            <EditAlbumDialog
+              album={album as AlbumWithItemsDTO & AlbumDTO}
+              onAlbumUpdated={handleAlbumUpdated}
+            />
 
             {isOwner && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="outline" className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30">
+                  <Button
+                    variant="outline"
+                    className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+                  >
                     <Trash2 className="w-4 h-4 mr-2" />
                     Удалить альбом
                   </Button>
@@ -454,7 +463,10 @@ export default function AlbumDetail() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Отмена</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteAlbum} className="bg-red-500 hover:bg-red-600">
+                    <AlertDialogAction
+                      onClick={handleDeleteAlbum}
+                      className="bg-red-500 hover:bg-red-600"
+                    >
                       Удалить
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -479,7 +491,11 @@ export default function AlbumDetail() {
 
             <div className="space-y-3">
               {uploads.map((upload) => (
-                <UploadItem key={upload.id} upload={upload} onRemove={() => removeUpload(upload.id)} />
+                <UploadItem
+                  key={upload.id}
+                  upload={upload}
+                  onRemove={() => removeUpload(upload.id)}
+                />
               ))}
             </div>
           </CardContent>
@@ -487,9 +503,7 @@ export default function AlbumDetail() {
       )}
 
       <div className="mb-4">
-        <h2 className="text-xl font-semibold mb-4">
-          Файлы ({album.total})
-        </h2>
+        <h2 className="text-xl font-semibold mb-4">Файлы ({album.total})</h2>
 
         {album.items.length === 0 ? (
           <Card>
@@ -499,7 +513,10 @@ export default function AlbumDetail() {
               <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">
                 Загрузите фотографии или видео, чтобы сохранить воспоминания
               </p>
-              <Button onClick={() => setUploadDialogOpen(true)} className="bg-red-500 hover:bg-red-600">
+              <Button
+                onClick={() => setUploadDialogOpen(true)}
+                className="bg-red-500 hover:bg-red-600"
+              >
                 <Upload className="w-4 h-4 mr-2" />
                 Загрузить файлы
               </Button>
@@ -549,11 +566,7 @@ export default function AlbumDetail() {
 
             {hasMore && (
               <div className="mt-6 text-center">
-                <Button
-                  variant="outline"
-                  onClick={loadMore}
-                  disabled={isLoadingMore}
-                >
+                <Button variant="outline" onClick={loadMore} disabled={isLoadingMore}>
                   {isLoadingMore ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -569,7 +582,12 @@ export default function AlbumDetail() {
         )}
       </div>
 
-      <Dialog open={!!selectedFile} onOpenChange={() => setSelectedFile(null)}>
+      <Dialog
+        open={!!selectedFile}
+        onOpenChange={(open) => {
+          if (!open) closePreview();
+        }}
+      >
         <DialogContent className="w-[95vw] max-w-5xl">
           <DialogHeader>
             <DialogTitle>{selectedFile?.title}</DialogTitle>
@@ -629,13 +647,7 @@ export default function AlbumDetail() {
   );
 }
 
-function UploadItem({
-  upload,
-  onRemove,
-}: {
-  upload: UploadProgress;
-  onRemove: () => void;
-}) {
+function UploadItem({ upload, onRemove }: { upload: UploadProgress; onRemove: () => void }) {
   const getStatusIcon = () => {
     switch (upload.status) {
       case 'pending':
@@ -661,14 +673,12 @@ function UploadItem({
             {upload.status === 'completed'
               ? '100%'
               : upload.status === 'error'
-              ? upload.error
-              : `${upload.progress}%`}
+                ? upload.error
+                : `${upload.progress}%`}
           </p>
         </div>
 
-        {upload.status !== 'error' && (
-          <Progress value={upload.progress} className="h-1" />
-        )}
+        {upload.status !== 'error' && <Progress value={upload.progress} className="h-1" />}
       </div>
 
       {(upload.status === 'completed' || upload.status === 'error') && (

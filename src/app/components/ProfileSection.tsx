@@ -6,13 +6,7 @@ import { API_URL } from '../constants/api';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from './ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 
@@ -104,7 +98,7 @@ export default function ProfileSection() {
         const error = await response.json();
         setPasswordErrors([error.detail || 'Ошибка смены пароля']);
       }
-    } catch (error) {
+    } catch {
       setPasswordErrors(['Ошибка соединения']);
     } finally {
       setIsSubmitting(false);
@@ -126,13 +120,18 @@ export default function ProfileSection() {
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
             <Avatar className="size-16">
-              <AvatarImage src={user?.avatar_url ?? undefined} alt={user?.username ?? 'user avatar'} />
+              <AvatarImage
+                src={user?.avatar_url ?? undefined}
+                alt={user?.username ?? 'user avatar'}
+              />
               <AvatarFallback className="text-lg">{fallback}</AvatarFallback>
             </Avatar>
 
             <div>
               <p className="text-lg font-semibold">@{user?.username ?? 'unknown'}</p>
-              <p className="text-sm text-muted-foreground">Дата регистрации: {formatRegistrationDate(user?.created_at ?? '')}</p>
+              <p className="text-sm text-muted-foreground">
+                Дата регистрации: {formatRegistrationDate(user?.created_at ?? '')}
+              </p>
             </div>
           </div>
         </CardContent>
@@ -156,7 +155,9 @@ export default function ProfileSection() {
                   if (action.id === 'change-password') {
                     setChangePasswordOpen(true);
                   } else {
-                    toast.info(`${action.label} станет доступна после добавления endpoint на backend`);
+                    toast.info(
+                      `${action.label} станет доступна после добавления endpoint на backend`,
+                    );
                   }
                 }}
               >
@@ -172,9 +173,7 @@ export default function ProfileSection() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Смена пароля</DialogTitle>
-            <DialogDescription>
-              Введите текущий пароль и придумайте новый
-            </DialogDescription>
+            <DialogDescription>Введите текущий пароль и придумайте новый</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleChangePassword} className="space-y-4">
             <div className="space-y-2">
@@ -183,7 +182,9 @@ export default function ProfileSection() {
                 id="current-password"
                 type="password"
                 value={passwordForm.currentPassword}
-                onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                onChange={(e) =>
+                  setPasswordForm({ ...passwordForm, currentPassword: e.target.value })
+                }
                 required
               />
             </div>
@@ -206,7 +207,9 @@ export default function ProfileSection() {
                 id="confirm-password"
                 type="password"
                 value={passwordForm.confirmPassword}
-                onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                onChange={(e) =>
+                  setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })
+                }
                 required
               />
             </div>

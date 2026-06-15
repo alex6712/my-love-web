@@ -1,9 +1,6 @@
-import { API_URL } from "../constants/api";
+import { API_URL } from '../constants/api';
 
-export type AuthenticatedFetch = (
-  input: RequestInfo | URL,
-  init?: RequestInit,
-) => Promise<Response>;
+export type AuthenticatedFetch = (input: string, init?: RequestInit) => Promise<Response>;
 
 export interface AlbumDTO {
   id: string;
@@ -40,13 +37,13 @@ export async function getAlbums(
   const response = await authenticatedFetch(
     `${API_URL}/v1/media/albums?offset=${offset}&limit=${limit}`,
     {
-      method: "GET",
+      method: 'GET',
     },
   );
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || "Failed to get albums");
+    throw new Error(error.detail || 'Failed to get albums');
   }
 
   const data: AlbumsResponse = await response.json();
@@ -62,13 +59,13 @@ export async function searchAlbums(
   const response = await authenticatedFetch(
     `${API_URL}/v1/media/albums/search?q=${encodeURIComponent(query)}&threshold=${threshold}&limit=${limit}`,
     {
-      method: "GET",
+      method: 'GET',
     },
   );
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || "Failed to search albums");
+    throw new Error(error.detail || 'Failed to search albums');
   }
 
   const data: AlbumsResponse = await response.json();
@@ -81,13 +78,13 @@ export async function detachFilesFromAlbum(
   authenticatedFetch: AuthenticatedFetch = fetch,
 ): Promise<void> {
   const response = await authenticatedFetch(`${API_URL}/v1/media/albums/${albumId}/detach`, {
-    method: "PATCH",
+    method: 'PATCH',
     body: JSON.stringify({ files_uuids: fileUuids }),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || "Failed to detach files");
+    throw new Error(error.detail || 'Failed to detach files');
   }
 }
 
@@ -97,13 +94,13 @@ export async function attachFilesToAlbum(
   authenticatedFetch: AuthenticatedFetch = fetch,
 ): Promise<void> {
   const response = await authenticatedFetch(`${API_URL}/v1/media/albums/${albumId}/attach`, {
-    method: "PATCH",
+    method: 'PATCH',
     body: JSON.stringify({ files_uuids: fileUuids }),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || "Failed to attach files");
+    throw new Error(error.detail || 'Failed to attach files');
   }
 }
 
@@ -113,13 +110,13 @@ export async function updateAlbum(
   authenticatedFetch: AuthenticatedFetch = fetch,
 ): Promise<AlbumDTO> {
   const response = await authenticatedFetch(`${API_URL}/v1/media/albums/${albumId}`, {
-    method: "PATCH",
+    method: 'PATCH',
     body: JSON.stringify(data),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || "Failed to update album");
+    throw new Error(error.detail || 'Failed to update album');
   }
 
   return response.json();

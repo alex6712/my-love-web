@@ -1,32 +1,10 @@
-import { useState, useEffect } from "react";
-import { useAuth } from "./AuthContext";
-import {
-  Plus,
-  Gift,
-  MapPin,
-  Heart,
-  Star,
-  Sparkles,
-  Trash2,
-  Loader2,
-  Layers,
-} from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
-import { Button } from "./ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "./ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
+import { Plus, Gift, MapPin, Heart, Star, Sparkles, Trash2, Loader2, Layers } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Button } from './ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -34,18 +12,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "./ui/dialog";
-import { Input } from "./ui/input";
-import { Textarea } from "./ui/textarea";
-import { Badge } from "./ui/badge";
-import { toast } from "sonner";
-import {
-  createNote,
-  deleteNote,
-  getNotes,
-  NoteDTO,
-  NoteType,
-} from "../utils/notesApi";
+} from './ui/dialog';
+import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
+import { Badge } from './ui/badge';
+import { toast } from 'sonner';
+import { createNote, deleteNote, getNotes, NoteDTO, NoteType } from '../utils/notesApi';
 
 const NOTE_TYPES: {
   id: NoteType;
@@ -54,70 +26,60 @@ const NOTE_TYPES: {
   color: string;
 }[] = [
   {
-    id: "WISHLIST",
-    label: "Вишлисты",
+    id: 'WISHLIST',
+    label: 'Вишлисты',
     icon: Gift,
-    color: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300",
+    color: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300',
   },
   {
-    id: "DREAM",
-    label: "Мечты",
+    id: 'DREAM',
+    label: 'Мечты',
     icon: MapPin,
-    color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+    color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
   },
   {
-    id: "GRATITUDE",
-    label: "Благодарности",
+    id: 'GRATITUDE',
+    label: 'Благодарности',
     icon: Heart,
-    color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
+    color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
   },
   {
-    id: "MEMORY",
-    label: "Воспоминания",
+    id: 'MEMORY',
+    label: 'Воспоминания',
     icon: Star,
-    color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
+    color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
   },
 ];
 
-const ALL_TYPE = {
-  id: "ALL" as const,
-  label: "Все",
-  icon: Layers,
-  color: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300",
-};
-
-const NOTE_TYPE_COLORS: Record<
-  NoteType,
-  { color: string; icon: typeof Gift; label: string }
-> = {
+const NOTE_TYPE_COLORS: Record<NoteType, { color: string; icon: typeof Gift; label: string }> = {
   WISHLIST: {
-    color: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300",
+    color: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300',
     icon: Gift,
-    label: "Вишлисты",
+    label: 'Вишлисты',
   },
   DREAM: {
-    color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+    color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
     icon: MapPin,
-    label: "Мечты",
+    label: 'Мечты',
   },
   GRATITUDE: {
-    color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
+    color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
     icon: Heart,
-    label: "Благодарности",
+    label: 'Благодарности',
   },
   MEMORY: {
-    color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
+    color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
     icon: Star,
-    label: "Воспоминания",
+    label: 'Воспоминания',
   },
 };
 
-type ActiveType = NoteType | "ALL";
+type ActiveType = NoteType | 'ALL';
 
 export default function NotesSection() {
   const { authenticatedFetch } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [activeType, setActiveType] = useState<ActiveType>("ALL");
+  const [activeType, setActiveType] = useState<ActiveType>('ALL');
   const [notes, setNotes] = useState<NoteDTO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -128,19 +90,20 @@ export default function NotesSection() {
     content: string;
     type: NoteType;
   }>({
-    title: "",
-    content: "",
-    type: "WISHLIST",
+    title: '',
+    content: '',
+    type: 'WISHLIST',
   });
 
   const limit = 12;
 
   useEffect(() => {
     loadNotes(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeType]);
 
   const loadNotes = async (pageNum: number, append: boolean = false) => {
-    const typeParam = activeType === "ALL" ? undefined : activeType;
+    const typeParam = activeType === 'ALL' ? undefined : activeType;
 
     if (pageNum === 0) {
       setIsLoading(true);
@@ -160,9 +123,7 @@ export default function NotesSection() {
       setHasMore(data.notes.length >= limit);
       setPage(pageNum);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Ошибка загрузки заметок",
-      );
+      toast.error(error instanceof Error ? error.message : 'Ошибка загрузки заметок');
     } finally {
       setIsLoading(false);
       setIsLoadingMore(false);
@@ -176,23 +137,24 @@ export default function NotesSection() {
   const handleCreateNote = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await createNote({
-        title: newNote.title || undefined,
-        content: newNote.content,
-        type: newNote.type,
-      }, authenticatedFetch);
-      toast.success("Заметка создана!");
+      await createNote(
+        {
+          title: newNote.title || undefined,
+          content: newNote.content,
+          type: newNote.type,
+        },
+        authenticatedFetch,
+      );
+      toast.success('Заметка создана!');
       setNewNote({
-        title: "",
-        content: "",
-        type: activeType === "ALL" ? "WISHLIST" : activeType,
+        title: '',
+        content: '',
+        type: activeType === 'ALL' ? 'WISHLIST' : activeType,
       });
       setDialogOpen(false);
       loadNotes(0);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Ошибка создания заметки",
-      );
+      toast.error(error instanceof Error ? error.message : 'Ошибка создания заметки');
     }
   };
 
@@ -200,12 +162,10 @@ export default function NotesSection() {
     e.stopPropagation();
     try {
       await deleteNote(noteId, authenticatedFetch);
-      toast.success("Заметка удалена");
+      toast.success('Заметка удалена');
       loadNotes(0);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Ошибка удаления заметки",
-      );
+      toast.error(error instanceof Error ? error.message : 'Ошибка удаления заметки');
     }
   };
 
@@ -226,7 +186,7 @@ export default function NotesSection() {
             if (open) {
               setNewNote((prev) => ({
                 ...prev,
-                type: activeType === "ALL" ? "WISHLIST" : activeType,
+                type: activeType === 'ALL' ? 'WISHLIST' : activeType,
               }));
             }
             setDialogOpen(open);
@@ -248,9 +208,7 @@ export default function NotesSection() {
                 <label className="text-sm font-medium">Тип заметки</label>
                 <Select
                   value={newNote.type}
-                  onValueChange={(value) =>
-                    setNewNote({ ...newNote, type: value as NoteType })
-                  }
+                  onValueChange={(value) => setNewNote({ ...newNote, type: value as NoteType })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Выберите тип" />
@@ -275,9 +233,7 @@ export default function NotesSection() {
                 <Input
                   placeholder="Название заметки (необязательно)"
                   value={newNote.title}
-                  onChange={(e) =>
-                    setNewNote({ ...newNote, title: e.target.value })
-                  }
+                  onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
@@ -285,17 +241,12 @@ export default function NotesSection() {
                 <Textarea
                   placeholder="Напишите что-нибудь..."
                   value={newNote.content}
-                  onChange={(e) =>
-                    setNewNote({ ...newNote, content: e.target.value })
-                  }
+                  onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
                   rows={4}
                   required
                 />
               </div>
-              <Button
-                type="submit"
-                className="w-full bg-red-500 hover:bg-red-600"
-              >
+              <Button type="submit" className="w-full bg-red-500 hover:bg-red-600">
                 Создать
               </Button>
             </form>
@@ -303,10 +254,7 @@ export default function NotesSection() {
         </Dialog>
       </div>
 
-      <Tabs
-        value={activeType}
-        onValueChange={(value) => setActiveType(value as ActiveType)}
-      >
+      <Tabs value={activeType} onValueChange={(value) => setActiveType(value as ActiveType)}>
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mb-6">
           <TabsTrigger value="ALL" className="gap-2">
             <Layers className="w-4 h-4" />
@@ -344,10 +292,7 @@ export default function NotesSection() {
               <Layers className="w-16 h-16 text-gray-400 dark:text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg mb-2">Нет заметок</h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4">Создайте первую заметку</p>
-              <Button
-                onClick={() => setDialogOpen(true)}
-                className="bg-red-500 hover:bg-red-600"
-              >
+              <Button onClick={() => setDialogOpen(true)} className="bg-red-500 hover:bg-red-600">
                 <Plus className="w-4 h-4 mr-2" />
                 Создать
               </Button>
@@ -382,11 +327,9 @@ export default function NotesSection() {
                           </Button>
                         </div>
                       </div>
-                      <CardTitle className="line-clamp-2">
-                        {note.title || "Без названия"}
-                      </CardTitle>
+                      <CardTitle className="line-clamp-2">{note.title || 'Без названия'}</CardTitle>
                       <CardDescription>
-                        {new Date(note.created_at).toLocaleDateString("ru-RU")}
+                        {new Date(note.created_at).toLocaleDateString('ru-RU')}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -401,18 +344,14 @@ export default function NotesSection() {
 
             {hasMore && (
               <div className="mt-6 text-center">
-                <Button
-                  variant="outline"
-                  onClick={loadMore}
-                  disabled={isLoadingMore}
-                >
+                <Button variant="outline" onClick={loadMore} disabled={isLoadingMore}>
                   {isLoadingMore ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Загрузка...
                     </>
                   ) : (
-                    "Показать ещё"
+                    'Показать ещё'
                   )}
                 </Button>
               </div>

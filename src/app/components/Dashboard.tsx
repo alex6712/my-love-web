@@ -1,5 +1,16 @@
+/* eslint-disable react-hooks/static-components */
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Heart, Images, StickyNote, Gamepad2, Users, LogOut, Menu, UserCircle2, Settings } from 'lucide-react';
+import {
+  Heart,
+  Images,
+  StickyNote,
+  Gamepad2,
+  Users,
+  LogOut,
+  Menu,
+  UserCircle2,
+  Settings,
+} from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
@@ -50,9 +61,7 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
               <li key={item.id}>
                 <Button
                   variant={active ? 'default' : 'ghost'}
-                  className={`w-full justify-start ${
-                    active ? 'bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700' : ''
-                  }`}
+                  className={`w-full justify-start ${active ? 'bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700' : ''}`}
                   onClick={() => navigate(item.id)}
                 >
                   <Icon className="mr-2 h-4 w-4" />
@@ -118,9 +127,7 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
             </SheetContent>
           </Sheet>
 
-          <div className="p-6">
-            {children}
-          </div>
+          <div className="p-6">{children}</div>
         </main>
       </div>
     </div>
