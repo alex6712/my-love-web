@@ -1,16 +1,12 @@
-import { useState, useCallback } from "react";
-import { toast } from "sonner";
-import {
-  MEDIA_CONFIG,
-  formatFileSize,
-  isSupportedType,
-} from "../constants/media";
-import { API_URL } from "../constants/api";
+import { useState, useCallback } from 'react';
+import { toast } from 'sonner';
+import { MEDIA_CONFIG, formatFileSize, isSupportedType } from '../constants/media';
+import { API_URL } from '../constants/api';
 
 function generateIdempotencyKey(): string {
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
-    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
 }
@@ -20,7 +16,7 @@ export interface UploadProgress {
   fileName: string;
   fileSize: number;
   progress: number;
-  status: "pending" | "uploading" | "confirming" | "completed" | "error";
+  status: 'pending' | 'uploading' | 'confirming' | 'completed' | 'error';
   error?: string;
 }
 
@@ -36,20 +32,14 @@ interface UploadBatchFailedItem {
 
 interface UseFileUploadReturn {
   uploads: UploadProgress[];
-  uploadFile: (
-    file: File,
-    title: string,
-    description?: string,
-  ) => Promise<string>;
+  uploadFile: (file: File, title: string, description?: string) => Promise<string>;
   uploadFiles: (files: FileList, defaultTitle?: string) => Promise<string[]>;
   removeUpload: (id: string) => void;
   clearCompleted: () => void;
   isUploading: boolean;
 }
 
-export function useFileUpload(
-  options?: UseFileUploadOptions,
-): UseFileUploadReturn {
+export function useFileUpload(options?: UseFileUploadOptions): UseFileUploadReturn {
   const authenticatedFetch = options?.authenticatedFetch;
   const fetchWithAuth = authenticatedFetch || fetch.bind(undefined);
 
@@ -61,14 +51,12 @@ export function useFileUpload(
     fileName: file.name,
     fileSize: file.size,
     progress: 0,
-    status: "pending",
+    status: 'pending',
   });
 
   const updateUpload = (id: string, updates: Partial<UploadProgress>) => {
     setUploads((prev) =>
-      prev.map((upload) =>
-        upload.id === id ? { ...upload, ...updates } : upload,
-      ),
+      prev.map((upload) => (upload.id === id ? { ...upload, ...updates } : upload)),
     );
   };
 
@@ -77,9 +65,7 @@ export function useFileUpload(
   };
 
   const clearCompleted = () => {
-    setUploads((prev) =>
-      prev.filter((upload) => upload.status !== "completed"),
-    );
+    setUploads((prev) => prev.filter((upload) => upload.status !== 'completed'));
   };
 
   const getPresignedUrl = async (
@@ -89,9 +75,9 @@ export function useFileUpload(
   ): Promise<{ file_id: string; presigned_url: string }> => {
     const idempotencyKey = generateIdempotencyKey();
     const response = await fetchWithAuth(`${API_URL}/v1/media/files/upload`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Idempotency-Key": idempotencyKey,
+        'Idempotency-Key': idempotencyKey,
       },
       body: JSON.stringify({
         content_type: contentType,
@@ -102,14 +88,12 @@ export function useFileUpload(
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || "Failed to get upload URL");
+      throw new Error(error.detail || 'Failed to get upload URL');
     }
 
     const data = await response.json();
     return { file_id: data.url.file_id, presigned_url: data.url.presigned_url };
   };
-
-
 
   const getBatchPresignedUrls = async (
     filesMetadata: Array<{
@@ -129,16 +113,16 @@ export function useFileUpload(
     const idempotencyKey = generateIdempotencyKey();
 
     const response = await fetchWithAuth(`${API_URL}/v1/media/files/upload/batch`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Idempotency-Key": idempotencyKey,
+        'Idempotency-Key': idempotencyKey,
       },
       body: JSON.stringify({ files_metadata: filesMetadata }),
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || "Failed to get upload URLs");
+      throw new Error(error.detail || 'Failed to get upload URLs');
     }
 
     const data = await response.json();
@@ -157,14 +141,14 @@ export function useFileUpload(
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
 
-      xhr.upload.addEventListener("progress", (event) => {
+      xhr.upload.addEventListener('progress', (event) => {
         if (event.lengthComputable) {
           const progress = (event.loaded / event.total) * 100;
           onProgress(progress);
         }
       });
 
-      xhr.addEventListener("load", () => {
+      xhr.addEventListener('load', () => {
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve();
         } else {
@@ -172,36 +156,33 @@ export function useFileUpload(
         }
       });
 
-      xhr.addEventListener("error", () => {
-        reject(new Error("Upload failed"));
+      xhr.addEventListener('error', () => {
+        reject(new Error('Upload failed'));
       });
 
-      xhr.addEventListener("timeout", () => {
-        reject(new Error("Upload timed out"));
+      xhr.addEventListener('timeout', () => {
+        reject(new Error('Upload timed out'));
       });
 
-      xhr.open("PUT", presignedUrl);
-      xhr.setRequestHeader("Content-Type", file.type);
+      xhr.open('PUT', presignedUrl);
+      xhr.setRequestHeader('Content-Type', file.type);
       xhr.send(file);
     });
   };
 
   const confirmUpload = async (fileId: string): Promise<void> => {
     const idempotencyKey = generateIdempotencyKey();
-    const response = await fetchWithAuth(
-      `${API_URL}/v1/media/files/upload/confirm`,
-      {
-        method: "POST",
-        headers: {
-          "Idempotency-Key": idempotencyKey,
-        },
-        body: JSON.stringify({ file_id: fileId }),
+    const response = await fetchWithAuth(`${API_URL}/v1/media/files/upload/confirm`, {
+      method: 'POST',
+      headers: {
+        'Idempotency-Key': idempotencyKey,
       },
-    );
+      body: JSON.stringify({ file_id: fileId }),
+    });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || "Failed to confirm upload");
+      throw new Error(error.detail || 'Failed to confirm upload');
     }
   };
 
@@ -222,43 +203,34 @@ export function useFileUpload(
 
       if (!isSupportedType(file.type)) {
         throw new Error(
-          `Unsupported file type: ${file.type}. Supported types: ${MEDIA_CONFIG.SUPPORTED_TYPES.join(", ")}`,
+          `Unsupported file type: ${file.type}. Supported types: ${MEDIA_CONFIG.SUPPORTED_TYPES.join(', ')}`,
         );
       }
 
-      updateUpload(uploadState.id, { status: "uploading" });
+      updateUpload(uploadState.id, { status: 'uploading' });
 
-      const { file_id, presigned_url } = await getPresignedUrl(
-        file.type,
-        title,
-        description,
-      );
+      const { file_id, presigned_url } = await getPresignedUrl(file.type, title, description);
 
       await uploadToS3(presigned_url, file, (progress) => {
         updateUpload(uploadState.id, { progress: Math.round(progress) });
       });
 
-      updateUpload(uploadState.id, { status: "confirming", progress: 100 });
+      updateUpload(uploadState.id, { status: 'confirming', progress: 100 });
 
       await confirmUpload(file_id);
 
-      updateUpload(uploadState.id, { status: "completed" });
+      updateUpload(uploadState.id, { status: 'completed' });
 
       return file_id;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Upload failed";
-      updateUpload(uploadState.id, { status: "error", error: errorMessage });
+      const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+      updateUpload(uploadState.id, { status: 'error', error: errorMessage });
       throw error;
     }
   };
 
   const uploadFile = useCallback(
-    async (
-      file: File,
-      title: string,
-      description?: string,
-    ): Promise<string> => {
+    async (file: File, title: string, description?: string): Promise<string> => {
       setIsUploading(true);
       try {
         return await uploadSingleFile(file, title, description);
@@ -266,6 +238,7 @@ export function useFileUpload(
         setIsUploading(false);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 
@@ -306,18 +279,18 @@ export function useFileUpload(
         if (file.size > MEDIA_CONFIG.MAX_FILE_SIZE_BYTES) {
           const errorMessage = `File size exceeds maximum allowed (${formatFileSize(MEDIA_CONFIG.MAX_FILE_SIZE_BYTES)})`;
           errors.push(file.name);
-          updateUpload(uploadState.id, { status: "error", error: errorMessage });
+          updateUpload(uploadState.id, { status: 'error', error: errorMessage });
           continue;
         }
 
         if (!isSupportedType(file.type)) {
-          const errorMessage = `Unsupported file type: ${file.type}. Supported types: ${MEDIA_CONFIG.SUPPORTED_TYPES.join(", ")}`;
+          const errorMessage = `Unsupported file type: ${file.type}. Supported types: ${MEDIA_CONFIG.SUPPORTED_TYPES.join(', ')}`;
           errors.push(file.name);
-          updateUpload(uploadState.id, { status: "error", error: errorMessage });
+          updateUpload(uploadState.id, { status: 'error', error: errorMessage });
           continue;
         }
 
-        updateUpload(uploadState.id, { status: "uploading" });
+        updateUpload(uploadState.id, { status: 'uploading' });
         validItems.push({ clientRefId: uploadState.id, file, title });
       }
 
@@ -332,9 +305,9 @@ export function useFileUpload(
             updateUpload(item.clientRefId, { progress: Math.round(progress) });
           });
 
-          updateUpload(item.clientRefId, { status: "confirming", progress: 100 });
+          updateUpload(item.clientRefId, { status: 'confirming', progress: 100 });
           await confirmUpload(file_id);
-          updateUpload(item.clientRefId, { status: "completed" });
+          updateUpload(item.clientRefId, { status: 'completed' });
 
           results.push(file_id);
         } else if (validItems.length >= 2) {
@@ -356,7 +329,7 @@ export function useFileUpload(
 
             errors.push(item.file.name);
             updateUpload(item.clientRefId, {
-              status: "error",
+              status: 'error',
               error: failedItem.message,
             });
 
@@ -375,24 +348,24 @@ export function useFileUpload(
                   updateUpload(item.clientRefId, { progress: Math.round(progress) });
                 });
 
-                updateUpload(item.clientRefId, { status: "confirming", progress: 100 });
+                updateUpload(item.clientRefId, { status: 'confirming', progress: 100 });
                 await confirmUpload(successfulItem.file_id);
-                updateUpload(item.clientRefId, { status: "completed" });
+                updateUpload(item.clientRefId, { status: 'completed' });
                 results.push(successfulItem.file_id);
               } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : "Upload failed";
+                const errorMessage = error instanceof Error ? error.message : 'Upload failed';
                 errors.push(item.file.name);
-                updateUpload(item.clientRefId, { status: "error", error: errorMessage });
+                updateUpload(item.clientRefId, { status: 'error', error: errorMessage });
               }
             }),
           );
         }
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Upload failed");
+        toast.error(error instanceof Error ? error.message : 'Upload failed');
       }
 
       if (errors.length > 0) {
-        toast.error(`Failed to upload ${errors.length} file(s): ${errors.join(", ")}`);
+        toast.error(`Failed to upload ${errors.length} file(s): ${errors.join(', ')}`);
       }
 
       if (results.length > 0) {
@@ -402,6 +375,7 @@ export function useFileUpload(
       setIsUploading(false);
       return results;
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 

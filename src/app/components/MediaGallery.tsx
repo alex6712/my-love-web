@@ -1,11 +1,29 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, FolderHeart, Image as ImageIcon, Calendar, MoreVertical, Trash2, Edit2, ExternalLink, Search, X, Loader2 } from 'lucide-react';
+import {
+  Plus,
+  FolderHeart,
+  Image as ImageIcon,
+  Calendar,
+  MoreVertical,
+  Trash2,
+  Edit2,
+  ExternalLink,
+  Search,
+  X,
+  Loader2,
+} from 'lucide-react';
 import { useAuth } from './AuthContext';
-import { API_URL } from '../constants/api';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from './ui/dialog';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
@@ -52,12 +70,13 @@ export default function MediaGallery() {
 
   useEffect(() => {
     loadAlbums(0);
-  }, []);
+  });
 
   useEffect(() => {
     if (searchQuery.trim()) {
       handleSearch();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
   const loadAlbums = async (pageNum: number, append: boolean = false) => {
@@ -159,9 +178,7 @@ export default function MediaGallery() {
   };
 
   const handleAlbumUpdated = (updatedAlbum: AlbumDTO) => {
-    setAlbums((prev) =>
-      prev.map((album) => (album.id === updatedAlbum.id ? updatedAlbum : album))
-    );
+    setAlbums((prev) => prev.map((album) => (album.id === updatedAlbum.id ? updatedAlbum : album)));
   };
 
   if (isLoading) {
@@ -219,7 +236,9 @@ export default function MediaGallery() {
                 <Checkbox
                   id="is_private"
                   checked={newAlbum.is_private}
-                  onCheckedChange={(checked) => setNewAlbum({ ...newAlbum, is_private: checked as boolean })}
+                  onCheckedChange={(checked) =>
+                    setNewAlbum({ ...newAlbum, is_private: checked as boolean })
+                  }
                 />
                 <Label htmlFor="is_private" className="cursor-pointer">
                   Личный альбом (доступен только мне)
@@ -289,10 +308,7 @@ export default function MediaGallery() {
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {albums.map((album) => (
-              <Card
-                key={album.id}
-                className="group hover:shadow-lg transition-shadow"
-              >
+              <Card key={album.id} className="group hover:shadow-lg transition-shadow">
                 <CardHeader className="p-0 relative">
                   <div
                     className="aspect-video bg-gradient-to-br from-pink-200 to-purple-200 dark:from-pink-950 dark:to-purple-950 rounded-t-lg flex items-center justify-center group-hover:from-pink-300 group-hover:to-purple-300 transition-colors cursor-pointer"
@@ -311,16 +327,12 @@ export default function MediaGallery() {
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <div
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white dark:bg-gray-800/80 dark:hover:bg-gray-800 rounded-full p-1 cursor-pointer"
-                      >
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white dark:bg-gray-800/80 dark:hover:bg-gray-800 rounded-full p-1 cursor-pointer">
                         <MoreVertical className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                       </div>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => navigate(`/media/album/${album.id}`)}
-                      >
+                      <DropdownMenuItem onClick={() => navigate(`/media/album/${album.id}`)}>
                         <ExternalLink className="w-4 h-4 mr-2" />
                         Открыть
                       </DropdownMenuItem>
@@ -386,11 +398,7 @@ export default function MediaGallery() {
 
           {hasMore && !searchQuery && (
             <div className="mt-6 text-center">
-              <Button
-                variant="outline"
-                onClick={loadMore}
-                disabled={isLoadingMore}
-              >
+              <Button variant="outline" onClick={loadMore} disabled={isLoadingMore}>
                 {isLoadingMore ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />

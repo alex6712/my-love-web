@@ -1,9 +1,6 @@
-import { API_URL } from "../constants/api";
+import { API_URL } from '../constants/api';
 
-export type AuthenticatedFetch = (
-  input: RequestInfo | URL,
-  init?: RequestInit,
-) => Promise<Response>;
+export type AuthenticatedFetch = (input: string, init?: RequestInit) => Promise<Response>;
 
 export interface NoteDTO {
   id: string;
@@ -18,7 +15,7 @@ export interface NoteDTO {
   };
 }
 
-export type NoteType = "WISHLIST" | "DREAM" | "GRATITUDE" | "MEMORY";
+export type NoteType = 'WISHLIST' | 'DREAM' | 'GRATITUDE' | 'MEMORY';
 
 export interface CreateNoteRequest {
   title?: string;
@@ -54,12 +51,12 @@ export async function getNotes(
   }
 
   const response = await authenticatedFetch(url, {
-    method: "GET",
+    method: 'GET',
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || "Failed to get notes");
+    throw new Error(error.detail || 'Failed to get notes');
   }
 
   const data: NotesResponse = await response.json();
@@ -71,13 +68,13 @@ export async function createNote(
   authenticatedFetch: AuthenticatedFetch = fetch,
 ): Promise<void> {
   const response = await authenticatedFetch(`${API_URL}/v1/notes`, {
-    method: "POST",
+    method: 'POST',
     body: JSON.stringify(request),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || "Failed to create note");
+    throw new Error(error.detail || 'Failed to create note');
   }
 }
 
@@ -87,13 +84,13 @@ export async function updateNote(
   authenticatedFetch: AuthenticatedFetch = fetch,
 ): Promise<void> {
   const response = await authenticatedFetch(`${API_URL}/v1/notes/${noteId}`, {
-    method: "PATCH",
+    method: 'PATCH',
     body: JSON.stringify(request),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || "Failed to update note");
+    throw new Error(error.detail || 'Failed to update note');
   }
 }
 
@@ -102,11 +99,11 @@ export async function deleteNote(
   authenticatedFetch: AuthenticatedFetch = fetch,
 ): Promise<void> {
   const response = await authenticatedFetch(`${API_URL}/v1/notes/${noteId}`, {
-    method: "DELETE",
+    method: 'DELETE',
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || "Failed to delete note");
+    throw new Error(error.detail || 'Failed to delete note');
   }
 }

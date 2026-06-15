@@ -1,4 +1,4 @@
-import { API_URL } from "../constants/api";
+import { API_URL } from '../constants/api';
 
 interface BatchDownloadFailedItem {
   code: string;
@@ -18,12 +18,12 @@ export async function getDownloadPresignedUrl(
   const fetchWithAuth = authenticatedFetch || fetch.bind(undefined);
 
   const response = await fetchWithAuth(`${API_URL}/v1/media/files/${fileId}/download`, {
-    method: "GET",
+    method: 'GET',
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || "Failed to get download URL");
+    throw new Error(error.detail || 'Failed to get download URL');
   }
 
   const data = await response.json();
@@ -37,16 +37,16 @@ export async function getDownloadPresignedUrls(
   const fetchWithAuth = authenticatedFetch || fetch.bind(undefined);
 
   const response = await fetchWithAuth(`${API_URL}/v1/media/files/download/batch`, {
-    method: "POST",
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({ files_uuids: fileIds }),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || "Failed to get download URLs");
+    throw new Error(error.detail || 'Failed to get download URLs');
   }
 
   const data = await response.json();

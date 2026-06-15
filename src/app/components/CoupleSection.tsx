@@ -1,10 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Heart, UserPlus, Check, X, Calendar, Save, XCircle } from 'lucide-react';
+import { Heart, UserPlus, Check, X, Calendar, XCircle } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { API_URL } from '../constants/api';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from './ui/dialog';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Badge } from './ui/badge';
@@ -50,11 +57,6 @@ export default function CoupleSection() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isUpdatingDate, setIsUpdatingDate] = useState(false);
 
-  useEffect(() => {
-    fetchPartnerInfo();
-    fetchRequests();
-  }, []);
-
   const fetchPartnerInfo = async () => {
     try {
       const response = await authenticatedFetch(`${API_URL}/v1/couples`);
@@ -85,6 +87,11 @@ export default function CoupleSection() {
       console.error('Error fetching requests:', error);
     }
   };
+
+  useEffect(() => {
+    fetchPartnerInfo();
+    fetchRequests();
+  });
 
   const sendRequest = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,7 +141,7 @@ export default function CoupleSection() {
 
   const updateRelationshipDate = async (date: Date | null) => {
     if (!coupleInfo?.couple?.id) return;
-    
+
     setIsUpdatingDate(true);
     try {
       const response = await authenticatedFetch(`${API_URL}/v1/couples/${coupleInfo.couple.id}`, {
@@ -146,7 +153,6 @@ export default function CoupleSection() {
       });
 
       if (response.ok) {
-        const data = await response.json();
         setCoupleInfo({
           ...coupleInfo,
           couple: {
@@ -170,13 +176,29 @@ export default function CoupleSection() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'PENDING':
-        return <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300">Ожидание</Badge>;
+        return (
+          <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300">
+            Ожидание
+          </Badge>
+        );
       case 'ACCEPTED':
-        return <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">Принято</Badge>;
+        return (
+          <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+            Принято
+          </Badge>
+        );
       case 'DECLINED':
-        return <Badge className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Отклонено</Badge>;
+        return (
+          <Badge className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+            Отклонено
+          </Badge>
+        );
       case 'EXPIRED':
-        return <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">Истекло</Badge>;
+        return (
+          <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">
+            Истекло
+          </Badge>
+        );
       default:
         return null;
     }
@@ -220,12 +242,18 @@ export default function CoupleSection() {
                   <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      <span>С {new Date(coupleInfo.couple.partner.created_at).toLocaleDateString()}</span>
+                      <span>
+                        С {new Date(coupleInfo.couple.partner.created_at).toLocaleDateString()}
+                      </span>
                     </div>
                     {coupleInfo.couple.partner.is_active ? (
-                      <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">Активен</Badge>
+                      <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                        Активен
+                      </Badge>
                     ) : (
-                      <Badge className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Не активен</Badge>
+                      <Badge className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                        Не активен
+                      </Badge>
                     )}
                   </div>
                 </div>
@@ -235,10 +263,14 @@ export default function CoupleSection() {
               <div className="mt-4 pt-4 border-t">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Дата начала отношений:</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Дата начала отношений:
+                    </span>
                     <span className="text-sm font-medium">
                       {coupleInfo.couple.relationship_started_on
-                        ? new Date(coupleInfo.couple.relationship_started_on).toLocaleDateString('ru-RU')
+                        ? new Date(coupleInfo.couple.relationship_started_on).toLocaleDateString(
+                            'ru-RU',
+                          )
                         : 'Не указана'}
                     </span>
                   </div>
@@ -283,7 +315,9 @@ export default function CoupleSection() {
             <CardContent className="py-16 text-center">
               <Heart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg mb-2">У вас пока нет пары</h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">Отправьте запрос своему партнеру по его имени пользователя</p>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Отправьте запрос своему партнеру по его имени пользователя
+              </p>
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="bg-red-500 hover:bg-red-600">
@@ -332,7 +366,10 @@ export default function CoupleSection() {
             <CardContent>
               <div className="space-y-4">
                 {requests.map((request) => (
-                  <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div
+                    key={request.id}
+                    className="flex items-center justify-between p-4 border rounded-lg"
+                  >
                     <div className="flex items-center gap-3">
                       <Avatar>
                         <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white">
@@ -385,8 +422,9 @@ export default function CoupleSection() {
                   <p className="text-2xl mb-1">
                     {coupleInfo.couple.relationship_started_on
                       ? Math.floor(
-                          (Date.now() - new Date(coupleInfo.couple.relationship_started_on).getTime()) /
-                            (1000 * 60 * 60 * 24)
+                          (Date.now() -
+                            new Date(coupleInfo.couple.relationship_started_on).getTime()) /
+                            (1000 * 60 * 60 * 24),
                         )
                       : '—'}
                   </p>

@@ -1,2 +1,1 @@
-export const API_URL =
-  import.meta.env.VITE_API_URL || "https://api.my-love-application.ru";
+export const API_URL = import.meta.env.VITE_API_URL || 'https://api.my-love-application.ru';
