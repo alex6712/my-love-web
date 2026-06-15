@@ -22,12 +22,18 @@ VITE_API_URL=https://api.my-love-application.ru
 VITE_API_URL=http://localhost:8000
 ```
 
-### 2. Запуск приложения
+### 2. Установка зависимостей
+
+Проект использует **pnpm**. Установите зависимости:
 
 ```bash
-npm run dev
-# или
-yarn dev
+pnpm install
+```
+
+### 3. Запуск приложения
+
+```bash
+pnpm run dev
 ```
 
 Приложение будет доступно по адресу: http://localhost:4200

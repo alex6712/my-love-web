@@ -3,13 +3,13 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY package.json pnpm-lock.yaml ./
 
-RUN npm ci --ignore-scripts --no-progress --quiet
+RUN corepack enable && pnpm install --frozen-lockfile --ignore-scripts
 
 COPY . .
 
-RUN npm run build
+RUN pnpm run build
 
 # Stage 2 (копирование файлов, запуск)
 FROM nginx:alpine

@@ -1,7 +1,7 @@
 services:
   my-love-web:
     container_name: my-love-web
-    build: .
+    image: ghcr.io/alex6712/my-love-web:latest
     expose:
       - 80
     ports:
