@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { KeyRound, Pencil, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from './AuthContext';
+import { translateApiCode } from '../constants/apiCodes';
 import { API_URL } from '../constants/api';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
@@ -96,7 +97,7 @@ export default function ProfileSection() {
         setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
       } else {
         const error = await response.json();
-        setPasswordErrors([error.detail || 'Ошибка смены пароля']);
+        setPasswordErrors([translateApiCode(error.code, 'Ошибка смены пароля')]);
       }
     } catch {
       setPasswordErrors(['Ошибка соединения']);

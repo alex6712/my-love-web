@@ -1,4 +1,5 @@
 import { API_URL } from '../constants/api';
+import { ApiError } from './apiError';
 import type { AuthenticatedFetch } from './notesApi';
 
 interface DashboardResponse {
@@ -22,7 +23,7 @@ export async function getDashboardStats(
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Failed to get dashboard stats');
+    throw new ApiError(error.code, error.detail);
   }
 
   const data: DashboardResponse = await response.json();

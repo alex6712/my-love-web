@@ -17,6 +17,8 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Badge } from './ui/badge';
 import { toast } from 'sonner';
+import { ApiError } from '../utils/apiError';
+import { translateApiCode } from '../constants/apiCodes';
 import { createNote, deleteNote, getNotes, NoteDTO, NoteType } from '../utils/notesApi';
 
 const NOTE_TYPES: {
@@ -123,7 +125,9 @@ export default function NotesSection() {
       setHasMore(data.notes.length >= limit);
       setPage(pageNum);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Ошибка загрузки заметок');
+      toast.error(
+        error instanceof ApiError ? translateApiCode(error.code) : 'Ошибка загрузки заметок',
+      );
     } finally {
       setIsLoading(false);
       setIsLoadingMore(false);
@@ -154,7 +158,9 @@ export default function NotesSection() {
       setDialogOpen(false);
       loadNotes(0);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Ошибка создания заметки');
+      toast.error(
+        error instanceof ApiError ? translateApiCode(error.code) : 'Ошибка создания заметки',
+      );
     }
   };
 
@@ -165,7 +171,9 @@ export default function NotesSection() {
       toast.success('Заметка удалена');
       loadNotes(0);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Ошибка удаления заметки');
+      toast.error(
+        error instanceof ApiError ? translateApiCode(error.code) : 'Ошибка удаления заметки',
+      );
     }
   };
 

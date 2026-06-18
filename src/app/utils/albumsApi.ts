@@ -1,4 +1,5 @@
 import { API_URL } from '../constants/api';
+import { ApiError } from './apiError';
 
 export type AuthenticatedFetch = (input: string, init?: RequestInit) => Promise<Response>;
 
@@ -43,7 +44,7 @@ export async function getAlbums(
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Failed to get albums');
+    throw new ApiError(error.code, error.detail);
   }
 
   const data: AlbumsResponse = await response.json();
@@ -65,7 +66,7 @@ export async function searchAlbums(
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Failed to search albums');
+    throw new ApiError(error.code, error.detail);
   }
 
   const data: AlbumsResponse = await response.json();
@@ -84,7 +85,7 @@ export async function detachFilesFromAlbum(
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Failed to detach files');
+    throw new ApiError(error.code, error.detail);
   }
 }
 
@@ -100,7 +101,7 @@ export async function attachFilesToAlbum(
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Failed to attach files');
+    throw new ApiError(error.code, error.detail);
   }
 }
 
@@ -116,7 +117,7 @@ export async function updateAlbum(
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Failed to update album');
+    throw new ApiError(error.code, error.detail);
   }
 
   return response.json();

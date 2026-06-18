@@ -46,6 +46,8 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { toast } from 'sonner';
+import { ApiError } from '../utils/apiError';
+import { translateApiCode } from '../constants/apiCodes';
 import { searchAlbums, getAlbums, AlbumDTO } from '../utils/albumsApi';
 import { EditAlbumDialog } from './EditAlbumDialog';
 
@@ -122,7 +124,7 @@ export default function MediaGallery() {
       setAlbums(results);
       setHasMore(false);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Ошибка поиска');
+      toast.error(error instanceof ApiError ? translateApiCode(error.code) : 'Ошибка поиска');
     } finally {
       setIsSearching(false);
     }
@@ -155,7 +157,8 @@ export default function MediaGallery() {
         setDialogOpen(false);
         loadAlbums(0);
       } else {
-        toast.error('Не удалось создать альбом');
+        const error = await response.json();
+        toast.error(translateApiCode(error.code, 'Не удалось создать альбом'));
       }
     } catch (error) {
       console.error('Error creating album:', error);
@@ -166,15 +169,22 @@ export default function MediaGallery() {
   const deleteAlbum = async (albumId: string) => {
     try {
       const API_URL = (await import('../constants/api')).API_URL;
-      await authenticatedFetch(`${API_URL}/v1/media/albums/${albumId}`, {
+      const response = await authenticatedFetch(`${API_URL}/v1/media/albums/${albumId}`, {
         method: 'DELETE',
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new ApiError(error.code, error.detail);
+      }
 
       toast.success('Альбом удалён');
       loadAlbums(0);
     } catch (error) {
       console.error('Error deleting album:', error);
-      toast.error('Не удалось удалить альбом');
+      toast.error(
+        error instanceof ApiError ? translateApiCode(error.code) : 'Не удалось удалить альбом',
+      );
     }
   };
 

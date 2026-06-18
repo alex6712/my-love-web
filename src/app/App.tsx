@@ -20,29 +20,27 @@ function AppContent() {
     );
   }
 
-  if (!isAuthenticated) {
-    return (
-      <>
-        <LoginPage />
-        <Toaster />
-      </>
-    );
-  }
-
   return (
-    <Dashboard>
-      <Routes>
-        <Route path="/" element={<HomeSection />} />
-        <Route path="/media" element={<MediaGallery />} />
-        <Route path="/media/album/:albumId" element={<AlbumDetail />} />
-        <Route path="/notes" element={<NotesSection />} />
-        <Route path="/games" element={<GamesSection />} />
-        <Route path="/couple" element={<CoupleSection />} />
-        <Route path="/profile" element={<ProfileSection />} />
-        <Route path="/settings" element={<SettingsSection />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Dashboard>
+    <>
+      <Toaster />
+      {!isAuthenticated ? (
+        <LoginPage />
+      ) : (
+        <Dashboard>
+          <Routes>
+            <Route path="/" element={<HomeSection />} />
+            <Route path="/media" element={<MediaGallery />} />
+            <Route path="/media/album/:albumId" element={<AlbumDetail />} />
+            <Route path="/notes" element={<NotesSection />} />
+            <Route path="/games" element={<GamesSection />} />
+            <Route path="/couple" element={<CoupleSection />} />
+            <Route path="/profile" element={<ProfileSection />} />
+            <Route path="/settings" element={<SettingsSection />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Dashboard>
+      )}
+    </>
   );
 }
 

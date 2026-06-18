@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Heart, User, Lock } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuth } from './AuthContext';
+import { ApiError } from '../utils/apiError';
+import { translateApiCode } from '../constants/apiCodes';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -26,8 +29,8 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await login(loginData.username, loginData.password);
-    } catch {
-      /* empty */
+    } catch (error) {
+      toast.error(error instanceof ApiError ? translateApiCode(error.code) : 'Ошибка соединения');
     } finally {
       setIsLoading(false);
     }
@@ -39,8 +42,8 @@ export default function LoginPage() {
     try {
       await register(registerData.username, registerData.password);
       setRegisterData({ username: '', password: '' });
-    } catch {
-      /* empty */
+    } catch (error) {
+      toast.error(error instanceof ApiError ? translateApiCode(error.code) : 'Ошибка соединения');
     } finally {
       setIsLoading(false);
     }

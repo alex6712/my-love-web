@@ -1,4 +1,5 @@
 import { API_URL } from '../constants/api';
+import { ApiError } from './apiError';
 
 export type AuthenticatedFetch = (input: string, init?: RequestInit) => Promise<Response>;
 
@@ -56,7 +57,7 @@ export async function getNotes(
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Failed to get notes');
+    throw new ApiError(error.code, error.detail);
   }
 
   const data: NotesResponse = await response.json();
@@ -74,7 +75,7 @@ export async function createNote(
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Failed to create note');
+    throw new ApiError(error.code, error.detail);
   }
 }
 
@@ -90,7 +91,7 @@ export async function updateNote(
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Failed to update note');
+    throw new ApiError(error.code, error.detail);
   }
 }
 
@@ -104,6 +105,6 @@ export async function deleteNote(
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Failed to delete note');
+    throw new ApiError(error.code, error.detail);
   }
 }

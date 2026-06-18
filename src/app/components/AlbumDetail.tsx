@@ -43,6 +43,8 @@ import { MEDIA_CONFIG, formatFileSize } from '../constants/media';
 import { getDownloadPresignedUrls } from '../utils/fileApi';
 import { detachFilesFromAlbum, AlbumDTO } from '../utils/albumsApi';
 import { EditAlbumDialog } from './EditAlbumDialog';
+import { ApiError } from '../utils/apiError';
+import { translateApiCode } from '../constants/apiCodes';
 import { toast } from 'sonner';
 
 interface CreatorDTO {
@@ -225,15 +227,22 @@ export default function AlbumDetail() {
     if (!albumId) return;
 
     try {
-      await authenticatedFetch(`${API_URL}/v1/media/albums/${albumId}`, {
+      const response = await authenticatedFetch(`${API_URL}/v1/media/albums/${albumId}`, {
         method: 'DELETE',
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new ApiError(error.code, error.detail);
+      }
 
       toast.success('Альбом удалён');
       navigate('/media');
     } catch (error) {
       console.error('Error deleting album:', error);
-      toast.error('Не удалось удалить альбом');
+      toast.error(
+        error instanceof ApiError ? translateApiCode(error.code) : 'Не удалось удалить альбом',
+      );
     }
   };
 
@@ -254,7 +263,7 @@ export default function AlbumDetail() {
       const fileIds = await uploadFiles(files);
 
       if (fileIds.length > 0) {
-        await authenticatedFetch(`${API_URL}/v1/media/albums/${albumId}/attach`, {
+        const response = await authenticatedFetch(`${API_URL}/v1/media/albums/${albumId}/attach`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -262,11 +271,19 @@ export default function AlbumDetail() {
           body: JSON.stringify({ files_uuids: fileIds }),
         });
 
+        if (!response.ok) {
+          const error = await response.json();
+          throw new ApiError(error.code, error.detail);
+        }
+
         toast.success('Файлы добавлены в альбом');
         fetchAlbumFn();
       }
     } catch (error) {
       console.error('Error uploading files:', error);
+      toast.error(
+        error instanceof ApiError ? translateApiCode(error.code) : 'Не удалось загрузить файлы',
+      );
     } finally {
       setIsUploadingFiles(false);
     }

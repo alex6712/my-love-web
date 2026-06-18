@@ -1,4 +1,5 @@
 import { API_URL } from '../constants/api';
+import { ApiError } from './apiError';
 
 interface BatchDownloadFailedItem {
   code: string;
@@ -23,7 +24,7 @@ export async function getDownloadPresignedUrl(
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Failed to get download URL');
+    throw new ApiError(error.code, error.detail);
   }
 
   const data = await response.json();
@@ -46,7 +47,7 @@ export async function getDownloadPresignedUrls(
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Failed to get download URLs');
+    throw new ApiError(error.code, error.detail);
   }
 
   const data = await response.json();

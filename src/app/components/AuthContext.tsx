@@ -10,6 +10,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { API_URL } from '../constants/api';
+import { ApiError } from '../utils/apiError';
 
 interface User {
   id: string;
@@ -177,7 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || 'Ошибка входа');
+      throw new ApiError(error.code, error.detail);
     }
 
     const data = await response.json();
@@ -194,7 +195,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(userData.user);
     } else {
       saveToken(null);
-      throw new Error('Не удалось получить данные пользователя');
+      throw new ApiError('USER_FETCH_FAILED', 'Не удалось получить данные пользователя');
     }
 
     unauthorizedHandledRef.current = false;
@@ -213,7 +214,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || 'Ошибка регистрации');
+      throw new ApiError(error.code, error.detail);
     }
 
     toast.success('Регистрация успешна! Теперь войдите в систему.');

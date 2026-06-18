@@ -19,6 +19,8 @@ import { Avatar, AvatarFallback } from './ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar as CalendarPicker } from './ui/calendar';
 import { toast } from 'sonner';
+import { ApiError } from '../utils/apiError';
+import { translateApiCode } from '../constants/apiCodes';
 
 interface Partner {
   id: string;
@@ -70,6 +72,7 @@ export default function CoupleSection() {
       }
     } catch (error) {
       console.error('Error fetching partner:', error);
+      toast.error('Не удалось загрузить информацию о паре');
     } finally {
       setIsLoading(false);
     }
@@ -85,6 +88,7 @@ export default function CoupleSection() {
       }
     } catch (error) {
       console.error('Error fetching requests:', error);
+      toast.error('Не удалось загрузить заявки');
     }
   };
 
@@ -111,11 +115,13 @@ export default function CoupleSection() {
         setDialogOpen(false);
       } else {
         const error = await response.json();
-        toast.error(error.detail || 'Не удалось отправить запрос');
+        toast.error(translateApiCode(error.code, 'Не удалось отправить запрос'));
       }
     } catch (error) {
       console.error('Error sending request:', error);
-      toast.error('Ошибка при отправке запроса');
+      toast.error(
+        error instanceof ApiError ? translateApiCode(error.code) : 'Ошибка при отправке запроса',
+      );
     }
   };
 
@@ -132,11 +138,14 @@ export default function CoupleSection() {
           fetchPartnerInfo();
         }
       } else {
-        toast.error('Не удалось обработать запрос');
+        const error = await response.json();
+        toast.error(translateApiCode(error.code, 'Не удалось обработать запрос'));
       }
     } catch (error) {
       console.error('Error handling request:', error);
-      toast.error('Ошибка при обработке запроса');
+      toast.error(
+        error instanceof ApiError ? translateApiCode(error.code) : 'Ошибка при обработке запроса',
+      );
     }
   };
 
@@ -164,11 +173,13 @@ export default function CoupleSection() {
         toast.success('Дата обновлена');
       } else {
         const error = await response.json();
-        toast.error(error.detail || 'Не удалось обновить дату');
+        toast.error(translateApiCode(error.code, 'Не удалось обновить дату'));
       }
     } catch (error) {
       console.error('Error updating date:', error);
-      toast.error('Ошибка при обновлении даты');
+      toast.error(
+        error instanceof ApiError ? translateApiCode(error.code) : 'Ошибка при обновлении даты',
+      );
     } finally {
       setIsUpdatingDate(false);
     }
