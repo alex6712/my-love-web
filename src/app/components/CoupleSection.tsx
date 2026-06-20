@@ -21,6 +21,7 @@ import { Calendar as CalendarPicker } from './ui/calendar';
 import { toast } from 'sonner';
 import { ApiError } from '../utils/apiError';
 import { translateApiCode } from '../constants/apiCodes';
+import { toLocalDateString, parseLocalDate } from '../utils/date';
 
 interface Partner {
   id: string;
@@ -67,7 +68,7 @@ export default function CoupleSection() {
         const data = await response.json();
         setCoupleInfo(data);
         if (data.couple?.relationship_started_on) {
-          setSelectedDate(new Date(data.couple.relationship_started_on));
+          setSelectedDate(parseLocalDate(data.couple.relationship_started_on));
         }
       }
     } catch (error) {
@@ -158,7 +159,7 @@ export default function CoupleSection() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          relationship_started_on: date ? date.toISOString().split('T')[0] : null,
+          relationship_started_on: date ? toLocalDateString(date) : null,
         }),
       });
 
@@ -167,7 +168,7 @@ export default function CoupleSection() {
           ...coupleInfo,
           couple: {
             ...coupleInfo.couple!,
-            relationship_started_on: date ? date.toISOString().split('T')[0] : null,
+            relationship_started_on: date ? toLocalDateString(date) : null,
           },
         });
         toast.success('Дата обновлена');
@@ -280,9 +281,12 @@ export default function CoupleSection() {
                     </span>
                     <span className="text-sm font-medium">
                       {coupleInfo.couple.relationship_started_on
-                        ? new Date(coupleInfo.couple.relationship_started_on).toLocaleDateString(
-                            'ru-RU',
-                          )
+                        ? (() => {
+                            const [y, m, d] = coupleInfo.couple.relationship_started_on
+                              .split('-')
+                              .map(Number);
+                            return `${String(d).padStart(2, '0')}.${String(m).padStart(2, '0')}.${y}`;
+                          })()
                         : 'Не указана'}
                     </span>
                   </div>
