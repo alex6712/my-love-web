@@ -7,11 +7,13 @@ interface DashboardResponse {
   detail: string;
   files_count: number;
   notes_count: number;
+  relationship_started_on: string;
 }
 
 export interface DashboardStats {
   filesCount: number;
   notesCount: number;
+  relationship_started_on: string;
 }
 
 export async function getDashboardStats(
@@ -30,5 +32,6 @@ export async function getDashboardStats(
   return {
     filesCount: data.files_count,
     notesCount: data.notes_count,
+    relationship_started_on: data.relationship_started_on,
   };
 }

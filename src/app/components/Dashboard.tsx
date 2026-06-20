@@ -10,18 +10,26 @@ import {
   Menu,
   UserCircle2,
   Settings,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from './AuthContext';
+import { useAnniversary } from './AnniversaryContext';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 
 export default function Dashboard({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
+  const { isAnniversaryToday } = useAnniversary();
   const location = useLocation();
   const navigate = useNavigate();
 
+  const anniversaryItem = isAnniversaryToday
+    ? [{ id: '/anniversary', label: 'Годовщина 💖', icon: Sparkles }]
+    : [];
+
   const mainMenuItems = [
     { id: '/', label: 'Главная', icon: Heart },
+    ...anniversaryItem,
     { id: '/media', label: 'Медиа', icon: Images },
     { id: '/notes', label: 'Заметки', icon: StickyNote },
     { id: '/games', label: 'Игры', icon: Gamepad2 },
