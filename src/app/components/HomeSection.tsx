@@ -1,13 +1,51 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Heart, Calendar, Image, MessageCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Button } from './ui/button';
 import { useAuth } from './AuthContext';
+import { useAnniversary } from './AnniversaryContext';
 import { getDashboardStats } from '../utils/dashboardApi';
 
 export default function HomeSection() {
   const { user, authenticatedFetch } = useAuth();
+  const navigate = useNavigate();
+  const { setIsAnniversaryToday } = useAnniversary();
+
   const [filesCount, setFilesCount] = useState<string>('...');
   const [notesCount, setNotesCount] = useState<string>('...');
+  const [daysTogetherCount, setDaysTogetherCount] = useState<string>('...');
+  const [daysUntilAnniversary, setDaysUntilAnniversary] = useState<number | null>(null);
+
+  // eslint-disable-next-line unused-imports/no-unused-vars
+  const [activities, setActivities] = useState([
+    {
+      type: 'photo',
+      text: 'Добавлено фото "Закат на пляже"',
+      time: '2 часа назад',
+      icon: Image,
+    },
+    {
+      type: 'note',
+      text: 'Новая заметка "Идеи для выходных"',
+      time: '5 часов назад',
+      icon: MessageCircle,
+    },
+  ]);
+
+  function getDaysUntilNextAnniversary(startDate: string): number | null {
+    if (!startDate) return null;
+    const [, m, d] = startDate.split('-').map(Number);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    let anniversary = new Date(today.getFullYear(), m - 1, d);
+    if (anniversary < today) {
+      anniversary = new Date(today.getFullYear() + 1, m - 1, d);
+    }
+
+    return Math.ceil((anniversary.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  }
 
   useEffect(() => {
     let isMounted = true;
@@ -21,6 +59,24 @@ export default function HomeSection() {
 
         setFilesCount(String(stats.filesCount));
         setNotesCount(String(stats.notesCount));
+        setDaysTogetherCount(
+          String(
+            stats.relationship_started_on
+              ? (() => {
+                  const [y, m, d] = stats.relationship_started_on.split('-').map(Number);
+                  const start = new Date(y, m - 1, d);
+                  const now = new Date();
+                  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                  return Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+                })()
+              : '—',
+          ),
+        );
+        setDaysUntilAnniversary(
+          stats.relationship_started_on
+            ? getDaysUntilNextAnniversary(stats.relationship_started_on)
+            : null,
+        );
       } catch {
         if (!isMounted) {
           return;
@@ -28,6 +84,7 @@ export default function HomeSection() {
 
         setFilesCount('—');
         setNotesCount('—');
+        setDaysTogetherCount('—');
       }
     };
 
@@ -38,12 +95,35 @@ export default function HomeSection() {
     };
   }, [authenticatedFetch]);
 
+  useEffect(() => {
+    setIsAnniversaryToday(daysUntilAnniversary === 0);
+  }, [daysUntilAnniversary, setIsAnniversaryToday]);
+
   const stats = [
     { label: 'Фотографий', value: filesCount, icon: Image, color: 'text-pink-500' },
     { label: 'Заметок', value: notesCount, icon: MessageCircle, color: 'text-purple-500' },
-    { label: 'Дней вместе', value: '∞', icon: Calendar, color: 'text-red-500' },
+    { label: 'Дней вместе', value: daysTogetherCount, icon: Calendar, color: 'text-red-500' },
     { label: 'Моментов счастья', value: '∞', icon: Heart, color: 'text-rose-500' },
   ];
+
+  const anniversaryActivity =
+    daysUntilAnniversary !== null && daysUntilAnniversary <= 30
+      ? {
+          type: 'anniversary' as const,
+          text:
+            daysUntilAnniversary === 0
+              ? 'Сегодня годовщина знакомства! 🎉'
+              : daysUntilAnniversary === 1
+                ? 'Завтра годовщина знакомства!'
+                : `Годовщина знакомства через ${daysUntilAnniversary} дней!`,
+          time: 'Напоминание',
+          icon: Heart,
+        }
+      : null;
+
+  const displayedActivities = anniversaryActivity
+    ? [anniversaryActivity, ...activities]
+    : activities;
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -86,26 +166,7 @@ export default function HomeSection() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {[
-              {
-                type: 'photo',
-                text: 'Добавлено фото "Закат на пляже"',
-                time: '2 часа назад',
-                icon: Image,
-              },
-              {
-                type: 'note',
-                text: 'Новая заметка "Идеи для выходных"',
-                time: '5 часов назад',
-                icon: MessageCircle,
-              },
-              {
-                type: 'anniversary',
-                text: 'Годовщина знакомства через 10 дней!',
-                time: 'Напоминание',
-                icon: Heart,
-              },
-            ].map((activity, index) => {
+            {displayedActivities.map((activity, index) => {
               const Icon = activity.icon;
               return (
                 <div
@@ -115,9 +176,21 @@ export default function HomeSection() {
                   <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
                     <Icon className="w-5 h-5 text-red-500" />
                   </div>
-                  <div className="flex-1">
-                    <p>{activity.text}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-500">{activity.time}</p>
+                  <div className="flex-1 flex items-center justify-between">
+                    <div>
+                      <p>{activity.text}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-500">{activity.time}</p>
+                    </div>
+                    {activity.type === 'anniversary' && daysUntilAnniversary === 0 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-2 text-red-500 border-red-200 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20 cursor-pointer"
+                        onClick={() => navigate('/anniversary')}
+                      >
+                        Открыть поздравление
+                      </Button>
+                    )}
                   </div>
                 </div>
               );

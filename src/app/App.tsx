@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './components/AuthContext';
 import LoginPage from './components/LoginPage';
 import Dashboard from './components/Dashboard';
 import AlbumDetail from './components/AlbumDetail';
+import { AnniversaryProvider } from './components/AnniversaryContext';
 import { Toaster } from './components/ui/sonner';
 
 function AppContent() {
@@ -26,19 +27,22 @@ function AppContent() {
       {!isAuthenticated ? (
         <LoginPage />
       ) : (
-        <Dashboard>
-          <Routes>
-            <Route path="/" element={<HomeSection />} />
-            <Route path="/media" element={<MediaGallery />} />
-            <Route path="/media/album/:albumId" element={<AlbumDetail />} />
-            <Route path="/notes" element={<NotesSection />} />
-            <Route path="/games" element={<GamesSection />} />
-            <Route path="/couple" element={<CoupleSection />} />
-            <Route path="/profile" element={<ProfileSection />} />
-            <Route path="/settings" element={<SettingsSection />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Dashboard>
+        <AnniversaryProvider>
+          <Dashboard>
+            <Routes>
+              <Route path="/" element={<HomeSection />} />
+              <Route path="/media" element={<MediaGallery />} />
+              <Route path="/media/album/:albumId" element={<AlbumDetail />} />
+              <Route path="/notes" element={<NotesSection />} />
+              <Route path="/games" element={<GamesSection />} />
+              <Route path="/couple" element={<CoupleSection />} />
+              <Route path="/anniversary" element={<AnniversarySection />} />
+              <Route path="/profile" element={<ProfileSection />} />
+              <Route path="/settings" element={<SettingsSection />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Dashboard>
+        </AnniversaryProvider>
       )}
     </>
   );
@@ -59,5 +63,6 @@ import MediaGallery from './components/MediaGallery';
 import NotesSection from './components/NotesSection';
 import GamesSection from './components/GamesSection';
 import CoupleSection from './components/CoupleSection';
+import AnniversarySection from './components/AnniversarySection';
 import ProfileSection from './components/ProfileSection';
 import SettingsSection from './components/SettingsSection';
