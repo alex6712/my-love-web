@@ -6,6 +6,7 @@ import { Button } from './ui/button';
 import { useAuth } from './AuthContext';
 import { useAnniversary } from './AnniversaryContext';
 import { getDashboardStats } from '../utils/dashboardApi';
+import { parseLocalDate, pluralizeDays } from '../utils/date';
 
 export default function HomeSection() {
   const { user, authenticatedFetch } = useAuth();
@@ -35,13 +36,13 @@ export default function HomeSection() {
 
   function getDaysUntilNextAnniversary(startDate: string): number | null {
     if (!startDate) return null;
-    const [, m, d] = startDate.split('-').map(Number);
+    const start = parseLocalDate(startDate);
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    let anniversary = new Date(today.getFullYear(), m - 1, d);
+    let anniversary = new Date(today.getFullYear(), start.getMonth(), start.getDate());
     if (anniversary < today) {
-      anniversary = new Date(today.getFullYear() + 1, m - 1, d);
+      anniversary = new Date(today.getFullYear() + 1, start.getMonth(), start.getDate());
     }
 
     return Math.ceil((anniversary.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
@@ -63,8 +64,7 @@ export default function HomeSection() {
           String(
             stats.relationship_started_on
               ? (() => {
-                  const [y, m, d] = stats.relationship_started_on.split('-').map(Number);
-                  const start = new Date(y, m - 1, d);
+                  const start = parseLocalDate(stats.relationship_started_on);
                   const now = new Date();
                   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
                   return Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
@@ -115,7 +115,7 @@ export default function HomeSection() {
               ? 'Сегодня годовщина знакомства! 🎉'
               : daysUntilAnniversary === 1
                 ? 'Завтра годовщина знакомства!'
-                : `Годовщина знакомства через ${daysUntilAnniversary} дней!`,
+                : `Годовщина знакомства через ${daysUntilAnniversary} ${pluralizeDays(daysUntilAnniversary)}!`,
           time: 'Напоминание',
           icon: Heart,
         }
