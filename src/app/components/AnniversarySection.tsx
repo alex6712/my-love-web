@@ -16,7 +16,9 @@ export default function AnniversarySection() {
     const loadData = async () => {
       try {
         const stats = await getDashboardStats(authenticatedFetch);
-        if (!isMounted || !stats.relationship_started_on) return;
+        if (!isMounted || !stats.relationship_started_on) {
+          return;
+        }
 
         const start = parseLocalDate(stats.relationship_started_on);
         const now = new Date();

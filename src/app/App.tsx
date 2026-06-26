@@ -5,6 +5,7 @@ import LoginPage from './components/LoginPage';
 import Dashboard from './components/Dashboard';
 import AlbumDetail from './components/AlbumDetail';
 import { AnniversaryProvider } from './components/AnniversaryContext';
+import { DateFormatProvider } from './components/DateFormatContext';
 import { Toaster } from './components/ui/sonner';
 
 function AppContent() {
@@ -28,20 +29,22 @@ function AppContent() {
         <LoginPage />
       ) : (
         <AnniversaryProvider>
-          <Dashboard>
-            <Routes>
-              <Route path="/" element={<HomeSection />} />
-              <Route path="/media" element={<MediaGallery />} />
-              <Route path="/media/album/:albumId" element={<AlbumDetail />} />
-              <Route path="/notes" element={<NotesSection />} />
-              <Route path="/games" element={<GamesSection />} />
-              <Route path="/couple" element={<CoupleSection />} />
-              <Route path="/anniversary" element={<AnniversarySection />} />
-              <Route path="/profile" element={<ProfileSection />} />
-              <Route path="/settings" element={<SettingsSection />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Dashboard>
+          <DateFormatProvider>
+            <Dashboard>
+              <Routes>
+                <Route path="/" element={<HomeSection />} />
+                <Route path="/media" element={<MediaGallery />} />
+                <Route path="/media/album/:albumId" element={<AlbumDetail />} />
+                <Route path="/notes" element={<NotesSection />} />
+                <Route path="/games" element={<GamesSection />} />
+                <Route path="/couple" element={<CoupleSection />} />
+                <Route path="/anniversary" element={<AnniversarySection />} />
+                <Route path="/profile" element={<ProfileSection />} />
+                <Route path="/settings" element={<SettingsSection />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Dashboard>
+          </DateFormatProvider>
         </AnniversaryProvider>
       )}
     </>

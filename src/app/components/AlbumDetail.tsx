@@ -119,21 +119,27 @@ export default function AlbumDetail() {
 
   const showPrev = useCallback(() => {
     setSelectedIndex((prev) => {
-      if (prev === null || prev <= 0) return prev;
+      if (prev === null || prev <= 0) {
+        return prev;
+      }
       return prev - 1;
     });
   }, []);
 
   const showNext = useCallback(() => {
     setSelectedIndex((prev) => {
-      if (prev === null || !album || prev >= album.items.length - 1) return prev;
+      if (prev === null || !album || prev >= album.items.length - 1) {
+        return prev;
+      }
       return prev + 1;
     });
   }, [album]);
 
   const fetchAlbumFn = useCallback(
     async (pageNum: number = 0, append: boolean = false) => {
-      if (!albumId) return;
+      if (!albumId) {
+        return;
+      }
 
       if (pageNum === 0) {
         setIsLoading(true);
@@ -224,7 +230,9 @@ export default function AlbumDetail() {
   }, [albumId]);
 
   const handleDeleteAlbum = async () => {
-    if (!albumId) return;
+    if (!albumId) {
+      return;
+    }
 
     try {
       const response = await authenticatedFetch(`${API_URL}/v1/media/albums/${albumId}`, {
@@ -255,7 +263,9 @@ export default function AlbumDetail() {
   };
 
   const handleFilesUpload = async (files: FileList) => {
-    if (!albumId || files.length === 0) return;
+    if (!albumId || files.length === 0) {
+      return;
+    }
 
     setIsUploadingFiles(true);
 
@@ -311,7 +321,9 @@ export default function AlbumDetail() {
   };
 
   const handleDetachFile = async () => {
-    if (!albumId || !fileToDetach) return;
+    if (!albumId || !fileToDetach) {
+      return;
+    }
 
     try {
       await detachFilesFromAlbum(albumId, [fileToDetach.id], authenticatedFetch);
@@ -334,7 +346,9 @@ export default function AlbumDetail() {
   const isOwner = album?.creator.id === user?.id;
 
   useEffect(() => {
-    if (selectedIndex === null) return;
+    if (selectedIndex === null) {
+      return;
+    }
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -602,7 +616,9 @@ export default function AlbumDetail() {
       <Dialog
         open={!!selectedFile}
         onOpenChange={(open) => {
-          if (!open) closePreview();
+          if (!open) {
+            closePreview();
+          }
         }}
       >
         <DialogContent className="w-[95vw] max-w-5xl">

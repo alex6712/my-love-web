@@ -21,7 +21,19 @@ import { Calendar as CalendarPicker } from './ui/calendar';
 import { toast } from 'sonner';
 import { ApiError } from '../utils/apiError';
 import { translateApiCode } from '../constants/apiCodes';
-import { toLocalDateString, parseLocalDate } from '../utils/date';
+import {
+  toLocalDateString,
+  parseLocalDate,
+  getDurationBetween,
+  getAvailableFormats,
+  stepFormat,
+  getEffectiveFormat,
+  durationFormatLabels,
+  getDurationCardTooltip,
+  type DurationFormat,
+} from '../utils/date';
+import { useDateFormat } from './DateFormatContext';
+import { FormatToggle } from './ui/format-toggle';
 
 interface Partner {
   id: string;
@@ -52,6 +64,8 @@ interface CoupleRequest {
 
 export default function CoupleSection() {
   const { authenticatedFetch } = useAuth();
+  const { format, setFormat } = useDateFormat();
+  const [isHoveringToggle, setIsHoveringToggle] = useState(false);
   const [coupleInfo, setCoupleInfo] = useState<CoupleInfo | null>(null);
   const [requests, setRequests] = useState<CoupleRequest[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -151,7 +165,9 @@ export default function CoupleSection() {
   };
 
   const updateRelationshipDate = async (date: Date | null) => {
-    if (!coupleInfo?.couple?.id) return;
+    if (!coupleInfo?.couple?.id) {
+      return;
+    }
 
     setIsUpdatingDate(true);
     try {
@@ -295,7 +311,7 @@ export default function CoupleSection() {
                       <PopoverTrigger asChild>
                         <Button variant="outline" size="sm" disabled={isUpdatingDate}>
                           <Calendar className="w-4 h-4 mr-1" />
-                          {selectedDate ? 'Изменить' : 'Указать дату'}
+                          {selectedDate ? 'Изменить дату' : 'Указать дату'}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
@@ -433,19 +449,39 @@ export default function CoupleSection() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-pink-50 dark:bg-pink-950/30 rounded-lg">
-                  <Calendar className="w-8 h-8 text-pink-500 mx-auto mb-2" />
-                  <p className="text-2xl mb-1">
-                    {coupleInfo.couple.relationship_started_on
-                      ? Math.floor(
-                          (Date.now() -
-                            new Date(coupleInfo.couple.relationship_started_on).getTime()) /
-                            (1000 * 60 * 60 * 24),
-                        )
-                      : '—'}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Дней вместе</p>
-                </div>
+                {(() => {
+                  const date = coupleInfo.couple.relationship_started_on;
+                  const available: DurationFormat[] = date ? getAvailableFormats(date) : ['days'];
+                  const effective = getEffectiveFormat(format, available);
+                  const value = date ? String(getDurationBetween(date, effective)) : '—';
+                  const label = date ? durationFormatLabels[effective] : 'Дней вместе';
+
+                  const tooltipText = getDurationCardTooltip(available, !!date);
+
+                  return (
+                    <div className="relative group text-center p-4 bg-pink-50 dark:bg-pink-950/30 rounded-lg">
+                      {tooltipText && !isHoveringToggle && (
+                        <div className="absolute top-full mt-1 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-md px-3 py-1.5 w-[100%] text-center z-50 shadow-lg">
+                          {tooltipText}
+                          <div className="absolute -top-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-b-gray-900 dark:border-b-gray-700" />
+                        </div>
+                      )}
+                      <Calendar className="w-8 h-8 text-pink-500 mx-auto mb-2" />
+                      <p className="text-2xl mb-1">{value}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{label}</p>
+                      <div
+                        onMouseEnter={() => setIsHoveringToggle(true)}
+                        onMouseLeave={() => setIsHoveringToggle(false)}
+                      >
+                        <FormatToggle
+                          availableFormats={available}
+                          currentFormat={effective}
+                          onToggle={() => setFormat(stepFormat(effective, available))}
+                        />
+                      </div>
+                    </div>
+                  );
+                })()}
                 <div className="text-center p-4 bg-purple-50 dark:bg-purple-950/30 rounded-lg">
                   <Heart className="w-8 h-8 text-purple-500 mx-auto mb-2" />
                   <p className="text-2xl mb-1">—</p>
