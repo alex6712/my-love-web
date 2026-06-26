@@ -6,6 +6,18 @@ import { Button } from './ui/button';
 import { useAuth } from './AuthContext';
 import { useAnniversary } from './AnniversaryContext';
 import { getDashboardStats } from '../utils/dashboardApi';
+import {
+  parseLocalDate,
+  pluralizeDays,
+  getDurationBetween,
+  getAvailableFormats,
+  stepFormat,
+  getEffectiveFormat,
+  durationFormatLabels,
+  getDurationCardTooltip,
+} from '../utils/date';
+import { useDateFormat } from './DateFormatContext';
+import { FormatToggle } from './ui/format-toggle';
 
 export default function HomeSection() {
   const { user, authenticatedFetch } = useAuth();
@@ -14,8 +26,10 @@ export default function HomeSection() {
 
   const [filesCount, setFilesCount] = useState<string>('...');
   const [notesCount, setNotesCount] = useState<string>('...');
-  const [daysTogetherCount, setDaysTogetherCount] = useState<string>('...');
+  const [relationshipStartedOn, setRelationshipStartedOn] = useState<string | null>(null);
   const [daysUntilAnniversary, setDaysUntilAnniversary] = useState<number | null>(null);
+  const [isHoveringToggle, setIsHoveringToggle] = useState(false);
+  const { format, setFormat } = useDateFormat();
 
   // eslint-disable-next-line unused-imports/no-unused-vars
   const [activities, setActivities] = useState([
@@ -34,14 +48,16 @@ export default function HomeSection() {
   ]);
 
   function getDaysUntilNextAnniversary(startDate: string): number | null {
-    if (!startDate) return null;
-    const [, m, d] = startDate.split('-').map(Number);
+    if (!startDate) {
+      return null;
+    }
+    const start = parseLocalDate(startDate);
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    let anniversary = new Date(today.getFullYear(), m - 1, d);
+    let anniversary = new Date(today.getFullYear(), start.getMonth(), start.getDate());
     if (anniversary < today) {
-      anniversary = new Date(today.getFullYear() + 1, m - 1, d);
+      anniversary = new Date(today.getFullYear() + 1, start.getMonth(), start.getDate());
     }
 
     return Math.ceil((anniversary.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
@@ -59,19 +75,7 @@ export default function HomeSection() {
 
         setFilesCount(String(stats.filesCount));
         setNotesCount(String(stats.notesCount));
-        setDaysTogetherCount(
-          String(
-            stats.relationship_started_on
-              ? (() => {
-                  const [y, m, d] = stats.relationship_started_on.split('-').map(Number);
-                  const start = new Date(y, m - 1, d);
-                  const now = new Date();
-                  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                  return Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-                })()
-              : '—',
-          ),
-        );
+        setRelationshipStartedOn(stats.relationship_started_on ?? null);
         setDaysUntilAnniversary(
           stats.relationship_started_on
             ? getDaysUntilNextAnniversary(stats.relationship_started_on)
@@ -84,7 +88,7 @@ export default function HomeSection() {
 
         setFilesCount('—');
         setNotesCount('—');
-        setDaysTogetherCount('—');
+        setRelationshipStartedOn(null);
       }
     };
 
@@ -102,9 +106,19 @@ export default function HomeSection() {
   const stats = [
     { label: 'Фотографий', value: filesCount, icon: Image, color: 'text-pink-500' },
     { label: 'Заметок', value: notesCount, icon: MessageCircle, color: 'text-purple-500' },
-    { label: 'Дней вместе', value: daysTogetherCount, icon: Calendar, color: 'text-red-500' },
     { label: 'Моментов счастья', value: '∞', icon: Heart, color: 'text-rose-500' },
   ];
+
+  const durationAvailable = getAvailableFormats(relationshipStartedOn);
+  const effectiveFormat = getEffectiveFormat(format, durationAvailable);
+  const durationValue = relationshipStartedOn
+    ? String(getDurationBetween(relationshipStartedOn, effectiveFormat))
+    : '—';
+  const durationLabel = relationshipStartedOn
+    ? durationFormatLabels[effectiveFormat]
+    : 'Дней вместе';
+
+  const cardTooltip = getDurationCardTooltip(durationAvailable, !!relationshipStartedOn);
 
   const anniversaryActivity =
     daysUntilAnniversary !== null && daysUntilAnniversary <= 30
@@ -115,7 +129,7 @@ export default function HomeSection() {
               ? 'Сегодня годовщина знакомства! 🎉'
               : daysUntilAnniversary === 1
                 ? 'Завтра годовщина знакомства!'
-                : `Годовщина знакомства через ${daysUntilAnniversary} дней!`,
+                : `Годовщина знакомства через ${daysUntilAnniversary} ${pluralizeDays(daysUntilAnniversary)}!`,
           time: 'Напоминание',
           icon: Heart,
         }
@@ -137,11 +151,60 @@ export default function HomeSection() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {stats.map((stat, index) => {
+        {stats.slice(0, 2).map((stat, index) => {
           const Icon = stat.icon;
           return (
             <Card
               key={index}
+              className="hover:shadow-lg dark:hover:shadow-[0_4px_24px_rgba(255,255,255,0.06)] transition-shadow"
+            >
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</p>
+                    <p className="text-2xl mt-1">{stat.value}</p>
+                  </div>
+                  <Icon className={`w-10 h-10 ${stat.color}`} />
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+
+        {/* Relationship Duration Card */}
+        <Card className="relative group hover:shadow-lg dark:hover:shadow-[0_4px_24px_rgba(255,255,255,0.06)] transition-shadow">
+          {cardTooltip && !isHoveringToggle && (
+            <div className="absolute top-full mt-1 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-md px-3 py-1.5 w-[100%] text-center z-50 shadow-lg">
+              {cardTooltip}
+              <div className="absolute -top-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-b-gray-900 dark:border-b-gray-700" />
+            </div>
+          )}
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{durationLabel}</p>
+                <p className="text-2xl mt-1">{durationValue}</p>
+              </div>
+              <Calendar className="w-10 h-10 text-red-500" />
+            </div>
+          </CardContent>
+          <div
+            onMouseEnter={() => setIsHoveringToggle(true)}
+            onMouseLeave={() => setIsHoveringToggle(false)}
+          >
+            <FormatToggle
+              availableFormats={durationAvailable}
+              currentFormat={effectiveFormat}
+              onToggle={() => setFormat(stepFormat(effectiveFormat, durationAvailable))}
+            />
+          </div>
+        </Card>
+
+        {stats.slice(2).map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <Card
+              key={index + 2}
               className="hover:shadow-lg dark:hover:shadow-[0_4px_24px_rgba(255,255,255,0.06)] transition-shadow"
             >
               <CardContent className="pt-6">

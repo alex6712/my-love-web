@@ -3,6 +3,7 @@ import { Heart, Sparkles } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
 import { useAuth } from './AuthContext';
 import { getDashboardStats } from '../utils/dashboardApi';
+import { parseLocalDate, pluralizeYears, pluralizeDays } from '../utils/date';
 
 export default function AnniversarySection() {
   const { user, authenticatedFetch } = useAuth();
@@ -15,10 +16,11 @@ export default function AnniversarySection() {
     const loadData = async () => {
       try {
         const stats = await getDashboardStats(authenticatedFetch);
-        if (!isMounted || !stats.relationship_started_on) return;
+        if (!isMounted || !stats.relationship_started_on) {
+          return;
+        }
 
-        const [y, m, d] = stats.relationship_started_on.split('-').map(Number);
-        const start = new Date(y, m - 1, d);
+        const start = parseLocalDate(stats.relationship_started_on);
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -59,7 +61,9 @@ export default function AnniversarySection() {
           <CardContent className="pt-6">
             <Heart className="w-8 h-8 text-red-500 mx-auto mb-3 fill-red-500" />
             <p className="text-4xl mb-1">{yearsTogether ?? '...'}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">лет вместе</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {pluralizeYears(yearsTogether ?? 0)} вместе
+            </p>
           </CardContent>
         </Card>
 
@@ -67,7 +71,9 @@ export default function AnniversarySection() {
           <CardContent className="pt-6">
             <Heart className="w-8 h-8 text-rose-500 mx-auto mb-3" />
             <p className="text-4xl mb-1">{daysTogether ?? '...'}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">дней вместе</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {pluralizeDays(daysTogether ?? 0)} вместе
+            </p>
           </CardContent>
         </Card>
       </div>
