@@ -2,8 +2,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
-  ChevronLeft,
-  ChevronRight,
   Upload,
   Trash2,
   FileImage,
@@ -43,6 +41,7 @@ import { MEDIA_CONFIG, formatFileSize } from '../constants/media';
 import { getDownloadPresignedUrls } from '../utils/fileApi';
 import { detachFilesFromAlbum, AlbumDTO } from '../utils/albumsApi';
 import { EditAlbumDialog } from './EditAlbumDialog';
+import { PhotoViewer } from './PhotoViewer';
 import { ApiError } from '../utils/apiError';
 import { translateApiCode } from '../constants/apiCodes';
 import { toast } from 'sonner';
@@ -613,52 +612,20 @@ export default function AlbumDetail() {
         )}
       </div>
 
-      <Dialog
-        open={!!selectedFile}
-        onOpenChange={(open) => {
-          if (!open) {
-            closePreview();
-          }
-        }}
-      >
-        <DialogContent className="w-[95vw] max-w-5xl">
-          <DialogHeader>
-            <DialogTitle>{selectedFile?.title}</DialogTitle>
-          </DialogHeader>
-
-          {selectedFile && (
-            <div className="space-y-4 relative">
-              <button
-                type="button"
-                onClick={showPrev}
-                disabled={!canGoPrev}
-                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 h-14 w-14 md:h-12 md:w-12 rounded-full bg-black/50 text-white flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed"
-                aria-label="Предыдущий файл"
-              >
-                <ChevronLeft className="w-8 h-8 md:w-6 md:h-6" />
-              </button>
-
-              <button
-                type="button"
-                onClick={showNext}
-                disabled={!canGoNext}
-                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 h-14 w-14 md:h-12 md:w-12 rounded-full bg-black/50 text-white flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed"
-                aria-label="Следующий файл"
-              >
-                <ChevronRight className="w-8 h-8 md:w-6 md:h-6" />
-              </button>
-
-              {selectedFile.content_type.startsWith('image/') && (
-                <img
-                  src={fileUrls[selectedFile.id] || ''}
-                  alt={selectedFile.title}
-                  className="w-full rounded-lg"
-                />
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {selectedFile && selectedFile.content_type.startsWith('image/') && (
+        <PhotoViewer
+          fileUrl={fileUrls[selectedFile.id] || ''}
+          title={selectedFile.title}
+          description={selectedFile.description}
+          currentIndex={selectedIndex!}
+          totalCount={album.items.length}
+          onClose={closePreview}
+          onPrev={showPrev}
+          onNext={showNext}
+          canGoPrev={canGoPrev}
+          canGoNext={canGoNext}
+        />
+      )}
 
       <AlertDialog open={detachConfirmOpen} onOpenChange={setDetachConfirmOpen}>
         <AlertDialogContent>
