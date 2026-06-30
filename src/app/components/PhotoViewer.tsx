@@ -1,19 +1,24 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react';
+
+const NEED_MORE_THRESHOLD = 5;
 
 interface PhotoViewerProps {
   fileUrl: string;
   title: string;
   description?: string | null;
   currentIndex: number;
-  totalCount: number;
+  totalItems: number;
+  loadedItems: number;
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
   canGoPrev: boolean;
   canGoNext: boolean;
+  isLoadingMore?: boolean;
+  onNeedMore?: () => void;
 }
 
 export function PhotoViewer({
@@ -21,15 +26,20 @@ export function PhotoViewer({
   title,
   description,
   currentIndex,
-  totalCount,
+  totalItems,
+  loadedItems,
   onClose,
   onPrev,
   onNext,
   canGoPrev,
   canGoNext,
+  isLoadingMore = false,
+  onNeedMore,
 }: PhotoViewerProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const hasPendingNavigationRef = useRef(false);
+  const preloadedAtRef = useRef(0);
 
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null;
@@ -64,8 +74,86 @@ export function PhotoViewer({
     };
 
     window.addEventListener('keydown', handleTab);
-    return () => window.removeEventListener('keydown', handleTab);
+
+    return () => {
+      window.removeEventListener('keydown', handleTab);
+    };
   }, []);
+
+  useEffect(() => {
+    if (canGoNext && hasPendingNavigationRef.current) {
+      hasPendingNavigationRef.current = false;
+      onNext();
+    }
+  }, [canGoNext, onNext]);
+
+  useEffect(() => {
+    if (
+      loadedItems < totalItems &&
+      !isLoadingMore &&
+      currentIndex >= loadedItems - NEED_MORE_THRESHOLD &&
+      loadedItems > preloadedAtRef.current
+    ) {
+      preloadedAtRef.current = loadedItems;
+      onNeedMore?.();
+    }
+  }, [currentIndex, loadedItems, totalItems, isLoadingMore, onNeedMore]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      } else if (event.key === 'ArrowLeft') {
+        if (canGoPrev) {
+          onPrev();
+        }
+      } else if (event.key === 'ArrowRight') {
+        if (canGoNext) {
+          hasPendingNavigationRef.current = false;
+          onNext();
+        } else if (loadedItems < totalItems) {
+          hasPendingNavigationRef.current = true;
+          if (!isLoadingMore) {
+            onNeedMore?.();
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [canGoPrev, canGoNext, loadedItems, totalItems, isLoadingMore, onClose, onPrev, onNext, onNeedMore]);
+
+  const handlePrev = () => {
+    if (canGoPrev) {
+      onPrev();
+    }
+  };
+
+  const handleNext = () => {
+    if (canGoNext) {
+      hasPendingNavigationRef.current = false;
+      onNext();
+      return;
+    }
+
+    if (loadedItems < totalItems) {
+      hasPendingNavigationRef.current = true;
+      if (!isLoadingMore) {
+        onNeedMore?.();
+      }
+    }
+  };
+
+  const hasMoreItems = loadedItems < totalItems;
+  const isAtTrueEnd = !canGoNext && !hasMoreItems;
+
+  const getNextButtonLabel = () => {
+    if (canGoNext) return 'Следующий файл';
+    if (isLoadingMore) return 'Загрузка...';
+    if (hasMoreItems) return 'Загрузить ещё';
+    return 'Последний файл';
+  };
 
   return createPortal(
     <AnimatePresence>
@@ -86,7 +174,7 @@ export function PhotoViewer({
           </span>
           <div className="flex items-center gap-4 flex-shrink-0">
             <span className="text-white/70 text-sm whitespace-nowrap">
-              {currentIndex + 1} / {totalCount}
+              {currentIndex + 1} / {totalItems}
             </span>
             <button
               ref={closeButtonRef}
@@ -103,7 +191,7 @@ export function PhotoViewer({
         <div className="flex-1 flex items-center justify-center relative min-h-0">
           <button
             type="button"
-            onClick={onPrev}
+            onClick={handlePrev}
             disabled={!canGoPrev}
             className="absolute left-0 top-0 bottom-0 w-16 md:w-24 flex items-center justify-start pl-2 md:pl-4 z-10 disabled:opacity-0 group cursor-pointer"
             aria-label="Предыдущий файл"
@@ -131,14 +219,29 @@ export function PhotoViewer({
 
           <button
             type="button"
-            onClick={onNext}
-            disabled={!canGoNext}
+            onClick={handleNext}
+            disabled={isAtTrueEnd}
             className="absolute right-0 top-0 bottom-0 w-16 md:w-24 flex items-center justify-end pr-2 md:pr-4 z-10 disabled:opacity-0 group cursor-pointer"
-            aria-label="Следующий файл"
+            aria-label={getNextButtonLabel()}
           >
-            <div className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/40 text-white opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">
-              <ChevronRight className="w-6 h-6 md:w-7 md:h-7" />
-            </div>
+            {!canGoNext && isLoadingMore ? (
+              <div className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/40 text-white">
+                <Loader2 className="w-5 h-5 animate-spin" />
+              </div>
+            ) : (
+              <div
+                className={`
+                  flex items-center justify-center
+                  w-10 h-10 md:w-12 md:h-12
+                  rounded-full bg-black/40 text-white
+                  transition-opacity
+                  ${canGoNext || hasMoreItems ? 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100' : ''}
+                  ${!canGoNext && hasMoreItems && !isLoadingMore ? 'opacity-60' : ''}
+                `}
+              >
+                <ChevronRight className="w-6 h-6 md:w-7 md:h-7" />
+              </div>
+            )}
           </button>
         </div>
 

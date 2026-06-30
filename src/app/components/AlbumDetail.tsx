@@ -344,6 +344,12 @@ export default function AlbumDetail() {
 
   const isOwner = album?.creator.id === user?.id;
 
+  const handleNeedMore = useCallback(() => {
+    if (hasMore && !isLoadingMore) {
+      loadMore();
+    }
+  }, [hasMore, isLoadingMore, loadMore]);
+
   useEffect(() => {
     if (selectedIndex === null) {
       return;
@@ -352,16 +358,12 @@ export default function AlbumDetail() {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         closePreview();
-      } else if (event.key === 'ArrowLeft') {
-        showPrev();
-      } else if (event.key === 'ArrowRight') {
-        showNext();
       }
     };
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [selectedIndex, closePreview, showPrev, showNext]);
+  }, [selectedIndex, closePreview]);
 
   if (isLoading) {
     return (
@@ -618,12 +620,15 @@ export default function AlbumDetail() {
           title={selectedFile.title}
           description={selectedFile.description}
           currentIndex={selectedIndex!}
-          totalCount={album.items.length}
+          totalItems={album.total}
+          loadedItems={album.items.length}
           onClose={closePreview}
           onPrev={showPrev}
           onNext={showNext}
           canGoPrev={canGoPrev}
           canGoNext={canGoNext}
+          isLoadingMore={isLoadingMore}
+          onNeedMore={handleNeedMore}
         />
       )}
 

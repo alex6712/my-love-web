@@ -10,7 +10,6 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "baseUrl": ".",
     "types": ["vite/client"],
     "allowImportingTsExtensions": true,
     "esModuleInterop": true,
