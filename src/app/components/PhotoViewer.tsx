@@ -52,7 +52,9 @@ export function PhotoViewer({
 
   useEffect(() => {
     const overlay = overlayRef.current;
-    if (!overlay) return;
+    if (!overlay) {
+      return;
+    }
 
     const focusableElements = overlay.querySelectorAll<HTMLElement>(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
@@ -61,8 +63,12 @@ export function PhotoViewer({
     const last = focusableElements[focusableElements.length - 1];
 
     const handleTab = (e: KeyboardEvent) => {
-      if (e.key !== 'Tab') return;
-      if (!first || !last) return;
+      if (e.key !== 'Tab') {
+        return;
+      }
+      if (!first || !last) {
+        return;
+      }
 
       if (e.shiftKey && document.activeElement === first) {
         e.preventDefault();
@@ -122,7 +128,17 @@ export function PhotoViewer({
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [canGoPrev, canGoNext, loadedItems, totalItems, isLoadingMore, onClose, onPrev, onNext, onNeedMore]);
+  }, [
+    canGoPrev,
+    canGoNext,
+    loadedItems,
+    totalItems,
+    isLoadingMore,
+    onClose,
+    onPrev,
+    onNext,
+    onNeedMore,
+  ]);
 
   const handlePrev = () => {
     if (canGoPrev) {
@@ -149,9 +165,15 @@ export function PhotoViewer({
   const isAtTrueEnd = !canGoNext && !hasMoreItems;
 
   const getNextButtonLabel = () => {
-    if (canGoNext) return 'Следующий файл';
-    if (isLoadingMore) return 'Загрузка...';
-    if (hasMoreItems) return 'Загрузить ещё';
+    if (canGoNext) {
+      return 'Следующий файл';
+    }
+    if (isLoadingMore) {
+      return 'Загрузка...';
+    }
+    if (hasMoreItems) {
+      return 'Загрузить ещё';
+    }
     return 'Последний файл';
   };
 
@@ -169,9 +191,7 @@ export function PhotoViewer({
         aria-label="Просмотр фотографий"
       >
         <div className="flex items-center justify-between flex-shrink-0 h-14 px-4 md:px-6">
-          <span className="text-white text-sm md:text-base truncate mr-4">
-            {title}
-          </span>
+          <span className="text-white text-sm md:text-base truncate mr-4">{title}</span>
           <div className="flex items-center gap-4 flex-shrink-0">
             <span className="text-white/70 text-sm whitespace-nowrap">
               {currentIndex + 1} / {totalItems}
