@@ -29,11 +29,11 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
 
   const mainMenuItems = [
     { id: '/', label: 'Главная', icon: Heart },
-    ...anniversaryItem,
     { id: '/media', label: 'Медиа', icon: Images },
     { id: '/notes', label: 'Заметки', icon: StickyNote },
     { id: '/games', label: 'Игры', icon: Gamepad2 },
     { id: '/couple', label: 'Пара', icon: Users },
+    ...anniversaryItem,
   ];
 
   const isActive = (path: string) => {

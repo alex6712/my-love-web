@@ -239,7 +239,7 @@ export default function HomeSection() {
                   <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
                     <Icon className="w-5 h-5 text-red-500" />
                   </div>
-                  <div className="flex-1 flex items-center justify-between">
+                  <div className="flex-1 flex items-center justify-between gap-[8px]">
                     <div>
                       <p>{activity.text}</p>
                       <p className="text-sm text-gray-500 dark:text-gray-500">{activity.time}</p>
@@ -248,7 +248,7 @@ export default function HomeSection() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="mt-2 text-red-500 border-red-200 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20 cursor-pointer"
+                        className="whitespace-normal min-h-8 h-[100%] shrink-1 mt-2 text-red-500 border-red-200 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20 cursor-pointer"
                         onClick={() => navigate('/anniversary')}
                       >
                         Открыть поздравление

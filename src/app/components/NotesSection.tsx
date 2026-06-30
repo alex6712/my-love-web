@@ -247,6 +247,7 @@ export default function NotesSection() {
               <div className="space-y-2">
                 <label className="text-sm font-medium">Содержание *</label>
                 <Textarea
+                  style={{ height: `min(max(60dvh, 240px), 40dvh)` }}
                   placeholder="Напишите что-нибудь..."
                   value={newNote.content}
                   onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
