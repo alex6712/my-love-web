@@ -55,7 +55,9 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
           <Heart className="w-8 h-8 text-red-500 fill-red-500" />
           <div>
             <h2 className="font-semibold">My Love</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-500">@{user?.username}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-500">
+              {user?.display_name || `@${user?.username}`}
+            </p>
           </div>
         </div>
       </div>

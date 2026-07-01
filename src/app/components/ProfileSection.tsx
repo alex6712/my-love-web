@@ -32,9 +32,11 @@ const formatRegistrationDate = (date: string) => {
 };
 
 export default function ProfileSection() {
-  const { user, authenticatedFetch } = useAuth();
+  const { user, authenticatedFetch, updateUser } = useAuth();
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [changeNameOpen, setChangeNameOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [changeNameValue, setChangeNameValue] = useState('');
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
@@ -42,7 +44,7 @@ export default function ProfileSection() {
   });
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
 
-  const fallback = user?.username?.charAt(0).toUpperCase() ?? 'U';
+  const fallback = (user?.display_name || user?.username)?.charAt(0).toUpperCase() ?? 'U';
 
   const validatePassword = (password: string): string[] => {
     const errors: string[] = [];
@@ -129,7 +131,10 @@ export default function ProfileSection() {
             </Avatar>
 
             <div>
-              <p className="text-lg font-semibold">@{user?.username ?? 'unknown'}</p>
+              <p className="text-lg font-semibold">
+                {user?.display_name || user?.username || 'unknown'}
+              </p>
+              <p className="text-sm text-muted-foreground">@{user?.username}</p>
               <p className="text-sm text-muted-foreground">
                 Дата регистрации: {formatRegistrationDate(user?.created_at ?? '')}
               </p>
@@ -155,6 +160,9 @@ export default function ProfileSection() {
                 onClick={() => {
                   if (action.id === 'change-password') {
                     setChangePasswordOpen(true);
+                  } else if (action.id === 'change-name') {
+                    setChangeNameValue(user?.display_name || '');
+                    setChangeNameOpen(true);
                   } else {
                     toast.info(
                       `${action.label} станет доступна после добавления endpoint на backend`,
@@ -169,6 +177,62 @@ export default function ProfileSection() {
           })}
         </CardContent>
       </Card>
+
+      <Dialog open={changeNameOpen} onOpenChange={setChangeNameOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Смена отображаемого имени</DialogTitle>
+            <DialogDescription>
+              Введите новое имя, которое будут видеть другие пользователи
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              setIsSubmitting(true);
+              try {
+                const response = await authenticatedFetch(`${API_URL}/v1/users/profile`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ display_name: changeNameValue }),
+                });
+                if (response.ok) {
+                  updateUser({ display_name: changeNameValue });
+                  toast.success('Имя успешно изменено');
+                  setChangeNameOpen(false);
+                } else {
+                  const error = await response.json();
+                  toast.error(translateApiCode(error.code, 'Ошибка смены имени'));
+                }
+              } catch {
+                toast.error('Ошибка соединения');
+              } finally {
+                setIsSubmitting(false);
+              }
+            }}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="change-name">Отображаемое имя</Label>
+              <Input
+                id="change-name"
+                type="text"
+                value={changeNameValue}
+                onChange={(e) => setChangeNameValue(e.target.value)}
+                required
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={() => setChangeNameOpen(false)}>
+                Отмена
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Сохранение...' : 'Сохранить'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen}>
         <DialogContent>

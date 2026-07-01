@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Heart, User, Lock } from 'lucide-react';
+import { Heart, User, UserCircle2, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from './AuthContext';
 import { ApiError } from '../utils/apiError';
@@ -21,6 +21,7 @@ export default function LoginPage() {
 
   const [registerData, setRegisterData] = useState({
     username: '',
+    displayName: '',
     password: '',
   });
 
@@ -40,8 +41,8 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await register(registerData.username, registerData.password);
-      setRegisterData({ username: '', password: '' });
+      await register(registerData.username, registerData.password, registerData.displayName);
+      setRegisterData({ username: '', displayName: '', password: '' });
     } catch (error) {
       toast.error(error instanceof ApiError ? translateApiCode(error.code) : 'Ошибка соединения');
     } finally {
@@ -151,6 +152,27 @@ export default function LoginPage() {
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-500">
                       От 3 до 32 символов (a-z, A-Z, 0-9, _, -)
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="register-display-name">Отображаемое имя *</Label>
+                    <div className="relative">
+                      <UserCircle2 className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-gray-400" />
+                      <Input
+                        id="register-display-name"
+                        type="text"
+                        placeholder="Как к вам обращаться"
+                        className="pl-10"
+                        value={registerData.displayName}
+                        onChange={(e) =>
+                          setRegisterData({ ...registerData, displayName: e.target.value })
+                        }
+                        required
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-500">
+                      Имя, которое будут видеть другие пользователи
                     </p>
                   </div>
 

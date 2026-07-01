@@ -39,6 +39,7 @@ interface Partner {
   id: string;
   created_at: string;
   username: string;
+  display_name: string;
   avatar_url?: string | null;
   is_active: boolean;
 }
@@ -263,11 +264,16 @@ export default function CoupleSection() {
               <div className="flex items-center gap-4">
                 <Avatar className="h-20 w-20">
                   <AvatarFallback className="bg-gradient-to-br from-pink-400 to-red-400 text-white text-2xl">
-                    {coupleInfo.couple.partner.username.charAt(0).toUpperCase()}
+                    {(coupleInfo.couple.partner.display_name || coupleInfo.couple.partner.username)
+                      .charAt(0)
+                      .toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <h3 className="text-xl mb-1">@{coupleInfo.couple.partner.username}</h3>
+                  <h3 className="text-xl mb-1">
+                    {coupleInfo.couple.partner.display_name ||
+                      `@${coupleInfo.couple.partner.username}`}
+                  </h3>
                   <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
@@ -405,11 +411,15 @@ export default function CoupleSection() {
                     <div className="flex items-center gap-3">
                       <Avatar>
                         <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white">
-                          {request.initiator.username.charAt(0).toUpperCase()}
+                          {(request.initiator.display_name || request.initiator.username)
+                            .charAt(0)
+                            .toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium">@{request.initiator.username}</p>
+                        <p className="font-medium">
+                          {request.initiator.display_name || `@${request.initiator.username}`}
+                        </p>
                       </div>
                     </div>
                     {request.status === 'PENDING' ? (

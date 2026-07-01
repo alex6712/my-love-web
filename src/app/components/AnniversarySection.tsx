@@ -52,7 +52,9 @@ export default function AnniversarySection() {
           <Heart className="w-10 h-10 text-red-500 fill-red-500 animate-pulse" />
         </div>
 
-        <h1 className="text-4xl md:text-5xl mb-2">С годовщиной, @{user?.username}! 🎉</h1>
+        <h1 className="text-4xl md:text-5xl mb-2">
+          С годовщиной, {user?.display_name || `@${user?.username}`}! 🎉
+        </h1>
         <p className="text-xl text-gray-600 dark:text-gray-400">Ещё один прекрасный год вместе</p>
       </div>
 
