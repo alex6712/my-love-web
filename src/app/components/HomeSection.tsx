@@ -143,7 +143,7 @@ export default function HomeSection() {
     <div className="max-w-6xl mx-auto">
       {/* Welcome Header */}
       <div className="mb-8 text-center">
-        <h1 className="text-3xl mb-2">Привет, @{user?.username}! 💖</h1>
+        <h1 className="text-3xl mb-2">Привет, {user?.display_name || `@${user?.username}`}! 💖</h1>
         <p className="text-gray-600 dark:text-gray-400">
           Добро пожаловать в ваш цифровой сад воспоминаний
         </p>

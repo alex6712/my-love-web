@@ -15,6 +15,7 @@ import { ApiError } from '../utils/apiError';
 interface User {
   id: string;
   username: string;
+  display_name: string;
   avatar_url?: string | null;
   is_active: boolean;
   created_at: string;
@@ -25,9 +26,10 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (username: string, password: string) => Promise<void>;
-  register: (username: string, password: string) => Promise<void>;
+  register: (username: string, password: string, displayName: string) => Promise<void>;
   logout: () => Promise<void>;
   authenticatedFetch: (url: string, options?: RequestInit) => Promise<Response>;
+  updateUser: (fields: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -202,13 +204,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     toast.success('Добро пожаловать! 💖');
   };
 
-  const register = async (username: string, password: string) => {
+  const register = async (username: string, password: string, displayName: string) => {
     const response = await fetch(`${API_URL}/v1/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, password, display_name: displayName }),
       credentials: 'include',
     });
 
@@ -219,6 +221,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     toast.success('Регистрация успешна! Теперь войдите в систему.');
   };
+
+  const updateUser = useCallback((fields: Partial<User>) => {
+    setUser((prev) => (prev ? { ...prev, ...fields } : null));
+  }, []);
 
   const logout = async () => {
     try {
@@ -284,6 +290,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         authenticatedFetch,
+        updateUser,
       }}
     >
       {children}
