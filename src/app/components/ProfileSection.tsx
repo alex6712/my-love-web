@@ -226,7 +226,7 @@ export default function ProfileSection() {
               <Button type="button" variant="outline" onClick={() => setChangeNameOpen(false)}>
                 Отмена
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} className="bg-red-500 hover:bg-red-600">
                 {isSubmitting ? 'Сохранение...' : 'Сохранить'}
               </Button>
             </div>
@@ -289,7 +289,7 @@ export default function ProfileSection() {
               <Button type="button" variant="outline" onClick={() => setChangePasswordOpen(false)}>
                 Отмена
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} className="bg-red-500 hover:bg-red-600">
                 {isSubmitting ? 'Сохранение...' : 'Сохранить'}
               </Button>
             </div>
