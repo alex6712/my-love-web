@@ -1,6 +1,6 @@
-# My Love Web Client
+# Elyria Web Client
 
-Веб-клиент для романтичного приложения "My Love Backend".
+Веб-клиент для романтичного приложения "Elyria".
 
 ## 🚀 Быстрый старт
 
@@ -14,7 +14,7 @@ cp .env.example .env
 
 По умолчанию используется production API:
 ```
-VITE_API_URL=https://api.my-love-application.ru
+VITE_API_URL=https://api.elyria.ru
 ```
 
 Для локальной разработки измените на:

@@ -61,7 +61,7 @@ export default function LoginPage() {
               <Heart className="w-8 h-8 text-pink-400 dark:text-pink-300 fill-pink-400 dark:fill-pink-300 absolute top-0 right-0 animate-pulse" />
             </div>
           </div>
-          <h1 className="text-3xl mb-2">My Love</h1>
+          <h1 className="text-3xl mb-2">Elyria</h1>
           <p className="text-gray-600 dark:text-gray-400">Цифровой сад наших отношений</p>
         </div>
 

@@ -54,7 +54,7 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-3">
           <Heart className="w-8 h-8 text-red-500 fill-red-500" />
           <div>
-            <h2 className="font-semibold">My Love</h2>
+            <h2 className="font-semibold">Elyria</h2>
             <p className="text-sm text-gray-500 dark:text-gray-500">
               {user?.display_name || `@${user?.username}`}
             </p>
@@ -127,7 +127,7 @@ export default function Dashboard({ children }: { children: React.ReactNode }) {
                 </Button>
                 <div className="flex items-center gap-2">
                   <Heart className="w-6 h-6 text-red-500 fill-red-500" />
-                  <span className="font-semibold">My Love</span>
+                  <span className="font-semibold">Elyria</span>
                 </div>
                 <div className="w-10" />
               </div>
