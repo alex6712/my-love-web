@@ -49,6 +49,7 @@ import { toast } from 'sonner';
 import { ApiError } from '../utils/apiError';
 import { translateApiCode } from '../constants/apiCodes';
 import { searchAlbums, getAlbums, AlbumDTO } from '../utils/albumsApi';
+import { API_URL } from '../constants/api';
 import { EditAlbumDialog } from './EditAlbumDialog';
 
 export default function MediaGallery() {
@@ -138,7 +139,6 @@ export default function MediaGallery() {
   const createAlbum = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const API_URL = (await import('../constants/api')).API_URL;
       const response = await authenticatedFetch(`${API_URL}/v1/media/albums`, {
         method: 'POST',
         headers: {
@@ -168,7 +168,6 @@ export default function MediaGallery() {
 
   const deleteAlbum = async (albumId: string) => {
     try {
-      const API_URL = (await import('../constants/api')).API_URL;
       const response = await authenticatedFetch(`${API_URL}/v1/media/albums/${albumId}`, {
         method: 'DELETE',
       });
