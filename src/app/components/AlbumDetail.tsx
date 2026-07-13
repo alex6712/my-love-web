@@ -214,6 +214,7 @@ export default function AlbumDetail() {
     [albumId, navigate, authenticatedFetch, limit],
   );
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const loadMore = () => {
     fetchAlbumFn(page + 1, true);
   };
@@ -657,6 +658,8 @@ function UploadItem({ upload, onRemove }: { upload: UploadProgress; onRemove: ()
     switch (upload.status) {
       case 'pending':
         return <Loader2 className="w-4 h-4 text-gray-400 dark:text-gray-400 animate-spin" />;
+      case 'compressing':
+        return <Loader2 className="w-4 h-4 text-yellow-500 animate-spin" />;
       case 'uploading':
       case 'confirming':
         return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
@@ -667,6 +670,19 @@ function UploadItem({ upload, onRemove }: { upload: UploadProgress; onRemove: ()
     }
   };
 
+  const statusLabel = () => {
+    switch (upload.status) {
+      case 'compressing':
+        return 'Сжатие...';
+      default:
+        return upload.status === 'completed'
+          ? '100%'
+          : upload.status === 'error'
+            ? upload.error
+            : `${upload.progress}%`;
+    }
+  };
+
   return (
     <div className="flex items-center gap-4">
       {getStatusIcon()}
@@ -674,16 +690,12 @@ function UploadItem({ upload, onRemove }: { upload: UploadProgress; onRemove: ()
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-1">
           <p className="text-sm truncate">{upload.fileName}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-500">
-            {upload.status === 'completed'
-              ? '100%'
-              : upload.status === 'error'
-                ? upload.error
-                : `${upload.progress}%`}
-          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-500">{statusLabel()}</p>
         </div>
 
-        {upload.status !== 'error' && <Progress value={upload.progress} className="h-1" />}
+        {upload.status !== 'error' && upload.status !== 'compressing' && (
+          <Progress value={upload.progress} className="h-1" />
+        )}
       </div>
 
       {(upload.status === 'completed' || upload.status === 'error') && (
