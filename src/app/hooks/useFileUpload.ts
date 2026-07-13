@@ -1,6 +1,12 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { MEDIA_CONFIG, formatFileSize, isSupportedType } from '../constants/media';
+import {
+  MEDIA_CONFIG,
+  COMPRESSION_CONFIG,
+  formatFileSize,
+  isSupportedType,
+} from '../constants/media';
+import { compressImage, shouldCompress } from '../utils/mediaCompress';
 import { API_URL } from '../constants/api';
 
 function generateIdempotencyKey(): string {
@@ -16,7 +22,7 @@ export interface UploadProgress {
   fileName: string;
   fileSize: number;
   progress: number;
-  status: 'pending' | 'uploading' | 'confirming' | 'completed' | 'error';
+  status: 'pending' | 'compressing' | 'uploading' | 'confirming' | 'completed' | 'error';
   error?: string;
 }
 
@@ -207,11 +213,30 @@ export function useFileUpload(options?: UseFileUploadOptions): UseFileUploadRetu
         );
       }
 
+      if (file.type.startsWith('video/') && file.size > COMPRESSION_CONFIG.VIDEO_WARN_SIZE_BYTES) {
+        toast.warning(
+          `Видео "${file.name}" большого размера (${formatFileSize(file.size)}). Рекомендуется сжать его перед загрузкой.`,
+        );
+      }
+
+      let uploadFile = file;
+      let uploadContentType: string = file.type;
+
+      if (shouldCompress(file)) {
+        updateUpload(uploadState.id, { status: 'compressing' });
+        uploadFile = await compressImage(file);
+        uploadContentType = uploadFile.type;
+      }
+
       updateUpload(uploadState.id, { status: 'uploading' });
 
-      const { file_id, presigned_url } = await getPresignedUrl(file.type, title, description);
+      const { file_id, presigned_url } = await getPresignedUrl(
+        uploadContentType,
+        title,
+        description,
+      );
 
-      await uploadToS3(presigned_url, file, (progress) => {
+      await uploadToS3(presigned_url, uploadFile, (progress) => {
         updateUpload(uploadState.id, { progress: Math.round(progress) });
       });
 
@@ -290,8 +315,24 @@ export function useFileUpload(options?: UseFileUploadOptions): UseFileUploadRetu
           continue;
         }
 
-        updateUpload(uploadState.id, { status: 'uploading' });
+        if (
+          file.type.startsWith('video/') &&
+          file.size > COMPRESSION_CONFIG.VIDEO_WARN_SIZE_BYTES
+        ) {
+          toast.warning(
+            `Видео "${file.name}" большого размера (${formatFileSize(file.size)}). Рекомендуется сжать его перед загрузкой.`,
+          );
+        }
+
         validItems.push({ clientRefId: uploadState.id, file, title });
+      }
+
+      for (const item of validItems) {
+        if (shouldCompress(item.file)) {
+          updateUpload(item.clientRefId, { status: 'compressing' });
+          item.file = await compressImage(item.file);
+        }
+        updateUpload(item.clientRefId, { status: 'uploading' });
       }
 
       const stateByClientRefId = new Map(validItems.map((item) => [item.clientRefId, item]));
